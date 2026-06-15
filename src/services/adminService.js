@@ -14,9 +14,14 @@ export const userService = {
 export const rolePermissionService = {
   getAll: () => apiRequest("/role-permissions"),
   getByRole: (role) => apiRequest(`/role-permissions/${role}`),
+  create: (data) => apiRequest("/role-permissions", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
   update: (role, menuPermissions) =>
     apiRequest(`/role-permissions/${role}`, {
       method: "PUT",
       body: JSON.stringify({ menuPermissions }),
     }),
+  delete: (role) => apiRequest(`/role-permissions/${role}`, { method: "DELETE" }),
 };

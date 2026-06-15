@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './index.css';
 import { useAuth } from './context/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
@@ -53,6 +53,7 @@ import CustomerIpBlockPage from './pages/customers/CustomerIpBlockPage';
 import LandingPageCreatePage from './pages/landing/LandingPageCreatePage';
 import LandingPageManagePage from './pages/landing/LandingPageManagePage';
 import LandingPageViewPage from './pages/landing/LandingPageViewPage';
+import { landingPageService } from './services/landingPageService';
 import WebsiteGeneralSettingPage from './pages/website/WebsiteGeneralSettingPage';
 import WebsiteSocialMediaPage from './pages/website/WebsiteSocialMediaPage';
 import WebsiteContactPage from './pages/website/WebsiteContactPage';
@@ -87,8 +88,18 @@ import ExpensePage from './pages/expense/ExpensePage';
 import ExpenseFormPage from './pages/expense/ExpenseFormPage';
 import ReportsPage from './pages/reports/ReportsPage';
 
+function getDirectLandingPageId() {
+  if (typeof window === 'undefined') return '';
+  const params = new URLSearchParams(window.location.search);
+  const queryId = params.get('landingPageId');
+  if (queryId) return queryId;
+  const match = window.location.pathname.match(/^\/landing-page\/([^/]+)$/);
+  return match?.[1] || '';
+}
+
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
+  const directLandingPageId = getDirectLandingPageId();
 
   // All hooks must be called unconditionally (Rules of Hooks).
   // They silently return empty data when there is no auth token.
@@ -195,6 +206,31 @@ function App() {
     { id: 3, title: 'Utility Bill', category: 'Utility Bill', date: '2026-06-08', amount: 1200, note: '', status: true },
   ]);
   const [selectedExpense, setSelectedExpense] = useState(null);
+  const [directCampaign, setDirectCampaign] = useState(null);
+  const [directCampaignLoading, setDirectCampaignLoading] = useState(Boolean(directLandingPageId));
+  const [directCampaignError, setDirectCampaignError] = useState('');
+
+  useEffect(() => {
+    if (!directLandingPageId || !isAuthenticated) return undefined;
+    let active = true;
+    setDirectCampaignLoading(true);
+    setDirectCampaignError('');
+    landingPageService.getOne(directLandingPageId)
+      .then((res) => {
+        if (!active) return;
+        setDirectCampaign(res.data || null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setDirectCampaignError(err.message || 'Landing page fetch failed.');
+      })
+      .finally(() => {
+        if (active) setDirectCampaignLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [directLandingPageId, isAuthenticated]);
 
   // Auth guards — placed after all hook calls to satisfy Rules of Hooks
   if (isLoading) {
@@ -213,6 +249,42 @@ function App() {
 
   if (!isAuthenticated) {
     return <LoginPage />;
+  }
+
+  if (directLandingPageId) {
+    if (directCampaignLoading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 text-sm font-semibold text-gray-500">
+          Loading landing page...
+        </div>
+      );
+    }
+
+    if (directCampaignError || !directCampaign) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+          <div className="rounded-lg border border-red-100 bg-white p-6 text-center shadow-sm">
+            <p className="text-sm font-bold text-red-500">{directCampaignError || 'Landing page not found.'}</p>
+            <button
+              type="button"
+              onClick={() => window.location.assign('/')}
+              className="mt-4 rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex min-h-screen overflow-hidden bg-gray-100">
+        <LandingPageViewPage
+          campaign={directCampaign}
+          onBack={() => window.location.assign('/')}
+        />
+      </div>
+    );
   }
 
   function goProducts(page) {
@@ -639,11 +711,22 @@ function App() {
       if (activeLandingPage === 'landing_create') {
         return <LandingPageCreatePage onNavigate={goLanding} />;
       }
+      if (activeLandingPage === 'landing_edit' && selectedCampaign) {
+        return (
+          <LandingPageCreatePage
+            key={selectedCampaign.Id}
+            mode="edit"
+            campaign={selectedCampaign}
+            onNavigate={(page) => { setSelectedCampaign(null); goLanding(page || 'landing_manage'); }}
+          />
+        );
+      }
       if (activeLandingPage === 'landing_manage') {
         return (
           <LandingPageManagePage
             onNavigate={goLanding}
-            onViewCampaign={(c) => { setSelectedCampaign(c); setActiveLandingPage('landing_view'); }}
+            onViewCampaign={(c) => window.open(`/?landingPageId=${c.Id}`, '_blank', 'noopener,noreferrer')}
+            onEditCampaign={(c) => { setSelectedCampaign(c); setActiveLandingPage('landing_edit'); }}
           />
         );
       }

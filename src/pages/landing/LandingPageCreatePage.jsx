@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
-  AlignJustify, List, ListOrdered, Link, Image, Film,
-  Maximize2, Code, HelpCircle, Plus,
+  Bold, Italic, Underline, AlignLeft,
+  List, ListOrdered, Link, Image, Film,
+  Maximize2, Code, HelpCircle, Plus, ChevronDown, X, Eye, CheckCircle2,
 } from 'lucide-react';
-
-const PRODUCTS = [
-  { id: 1, name: 'Product A' },
-  { id: 2, name: 'Product B' },
-  { id: 3, name: 'Product C' },
-];
+import { useProducts } from '../../hooks/useProducts';
+import { landingPageService } from '../../services/landingPageService';
 
 const TEMPLATES = [
   'Template Design 1',
@@ -76,24 +72,145 @@ function Sep() {
   return <span className="w-px h-4 bg-gray-300 mx-0.5" />;
 }
 
-export default function LandingPageCreatePage({ onNavigate }) {
-  const [form, setForm] = useState({
-    productId: '',
-    bannerImage: null,
-    campaignTitle: '',
-    subTitle: '',
-    shortDescription: '',
-    video: '',
-    reviewTitle: '',
-    reviewImages: [null],
-    descriptionTitle: '',
-    description: '',
-    whyChooseTitle: '',
-    whyChooseUs: '',
-    countdownTime: '',
-    campaignTemplate: TEMPLATES[0],
-    status: true,
-  });
+function ProductSelector({ products, loading, value, onChange, required }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selectedProduct = products.find((product) => String(product.Id) === String(value));
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(query.trim().toLowerCase()) ||
+    String(product.sku || '').toLowerCase().includes(query.trim().toLowerCase())
+  );
+
+  function handleSelect(product) {
+    onChange(String(product.Id));
+    setQuery('');
+    setOpen(false);
+  }
+
+  function clearSelection() {
+    onChange('');
+    setQuery('');
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm text-gray-600 focus:outline-none focus:border-blue-400"
+      >
+        <span className={selectedProduct ? 'text-gray-700' : 'text-gray-400'}>
+          {selectedProduct?.name || (loading ? 'Loading products...' : 'Choose ...')}
+        </span>
+        <span className="flex items-center gap-2">
+          {selectedProduct && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); clearSelection(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  clearSelection();
+                }
+              }}
+              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              title="Clear product"
+            >
+              <X size={14} />
+            </span>
+          )}
+          <ChevronDown size={15} className={`text-gray-400 transition ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+
+      <input
+        tabIndex={-1}
+        value={value}
+        onChange={() => {}}
+        required={required}
+        className="pointer-events-none absolute h-px w-px opacity-0"
+      />
+
+      {open && (
+        <div className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="border-b border-gray-100 p-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+              placeholder="Search product..."
+              className="w-full rounded border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto">
+            {loading && <div className="px-3 py-3 text-sm text-gray-400">Loading products...</div>}
+            {!loading && filteredProducts.map((product) => (
+              <button
+                key={product.Id}
+                type="button"
+                onClick={() => handleSelect(product)}
+                className={`block w-full border-b border-gray-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-blue-50 ${
+                  String(product.Id) === String(value) ? 'bg-blue-500 text-white hover:bg-blue-500' : 'text-gray-700'
+                }`}
+              >
+                <span className="block font-semibold">{product.name}</span>
+                {product.sku && <span className="block text-[11px] opacity-70">SKU: {product.sku}</span>}
+              </button>
+            ))}
+            {!loading && filteredProducts.length === 0 && (
+              <div className="px-3 py-3 text-sm text-gray-400">No product found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function LandingPageCreatePage({ mode = 'create', campaign, onNavigate }) {
+  const isEdit = mode === 'edit';
+  const { data: products, loading: productsLoading } = useProducts({ limit: 200 });
+  const matchedCampaignProduct = campaign?.product
+    ? products.find((product) => product.name === campaign.product)
+    : null;
+  const [form, setForm] = useState(() => buildFormState(campaign));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [previewTemplate, setPreviewTemplate] = useState(null);
+  const selectedProductId = form.productId || (isEdit && matchedCampaignProduct ? String(matchedCampaignProduct.Id) : '');
+  const selectedProduct = products.find((product) => String(product.Id) === String(selectedProductId));
+
+  const previewContent = {
+    productName: selectedProduct?.name || matchedCampaignProduct?.name || campaign?.product || 'Campaign Product',
+    title: form.campaignTitle || 'Campaign Title',
+    subTitle: form.subTitle || 'Campaign subtitle will appear here',
+    shortDescription: stripPreviewText(form.shortDescription || form.description || form.whyChooseUs),
+    price: form.price || '0',
+    originalPrice: form.originalPrice || '',
+    phone: form.phone || '+880...',
+    bannerImage: form.bannerImage ? URL.createObjectURL(form.bannerImage) : form.bannerImageUrl || '',
+    prizeImage: form.prizeImage ? URL.createObjectURL(form.prizeImage) : form.prizeImageUrl || '',
+  };
+
+  useEffect(() => {
+    if (!isEdit || !campaign?.Id) return undefined;
+    let active = true;
+    landingPageService.getOne(campaign.Id)
+      .then((res) => {
+        if (!active) return;
+        setForm(buildFormState(res.data || campaign));
+        setError('');
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Landing page detail fetch failed.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [campaign, isEdit]);
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -111,16 +228,67 @@ export default function LandingPageCreatePage({ onNavigate }) {
     });
   }
 
-  function handleSubmit(e) {
+  function removeSavedReviewImage(index) {
+    setForm((prev) => ({
+      ...prev,
+      savedReviewImages: prev.savedReviewImages.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    onNavigate && onNavigate('landing_manage');
+    setSaving(true);
+    setError('');
+    try {
+      const bannerImageUrl = form.bannerImage
+        ? await fileToDataUrl(form.bannerImage)
+        : form.bannerImageUrl;
+      const uploadedReviewImages = await Promise.all(
+        form.reviewImages.filter(Boolean).map((file) => fileToDataUrl(file))
+      );
+      const prizeImageUrl = form.prizeImage
+        ? await fileToDataUrl(form.prizeImage)
+        : form.prizeImageUrl;
+      const payload = {
+        productId: selectedProductId || null,
+        title: form.campaignTitle,
+        subTitle: form.subTitle,
+        bannerImageUrl,
+        prizeImageUrl,
+        reviewImages: [...form.savedReviewImages, ...uploadedReviewImages],
+        shortDescription: form.shortDescription,
+        video: form.video,
+        reviewTitle: form.reviewTitle,
+        descriptionTitle: form.descriptionTitle,
+        description: form.description,
+        whyChooseTitle: form.whyChooseTitle,
+        whyChooseUs: form.whyChooseUs,
+        price: form.price,
+        originalPrice: form.originalPrice,
+        phone: form.phone,
+        countdown: form.countdownTime,
+        template: form.campaignTemplate,
+        status: form.status,
+      };
+
+      if (isEdit && campaign?.Id) {
+        await landingPageService.update(campaign.Id, payload);
+      } else {
+        await landingPageService.create(payload);
+      }
+      onNavigate && onNavigate('landing_manage');
+    } catch (err) {
+      setError(err.message || 'Landing page save failed.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold text-gray-800">Landing Page Create</h1>
+        <h1 className="text-lg font-bold text-gray-800">Landing Page {isEdit ? 'Edit' : 'Create'}</h1>
         <div className="flex gap-2">
           <button
             type="button"
@@ -140,6 +308,11 @@ export default function LandingPageCreatePage({ onNavigate }) {
 
       {/* Form card */}
       <div className="bg-white rounded-xl shadow p-6">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-500">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Row 1: Products + Banner Image */}
           <div className="grid grid-cols-2 gap-5">
@@ -147,17 +320,13 @@ export default function LandingPageCreatePage({ onNavigate }) {
               <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Products <span className="text-red-500">*</span>
               </label>
-              <select
-                value={form.productId}
-                onChange={(e) => set('productId', e.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none focus:border-blue-400"
-              >
-                <option value="">Choose ...</option>
-                {PRODUCTS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+              <ProductSelector
+                products={products}
+                loading={productsLoading}
+                value={selectedProductId}
+                onChange={(value) => set('productId', value)}
+                required={!isEdit}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -166,9 +335,15 @@ export default function LandingPageCreatePage({ onNavigate }) {
               <input
                 type="file"
                 accept="image/*"
-                required
+                required={!isEdit && !form.bannerImageUrl}
                 onChange={(e) => set('bannerImage', e.target.files[0] ?? null)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200"
+              />
+              <ImagePreview
+                src={getPreviewImageSrc(form.bannerImage, form.bannerImageUrl)}
+                title={form.bannerImage ? 'New banner image' : 'Saved banner image'}
+                note={form.bannerImage ? `New selected: ${form.bannerImage.name}` : 'This image is loaded from backend.'}
+                aspect="wide"
               />
             </div>
           </div>
@@ -176,13 +351,12 @@ export default function LandingPageCreatePage({ onNavigate }) {
           {/* Campaign Title */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
-              Campaign Title <span className="text-red-500">*</span>
+              Campaign Title
             </label>
             <input
               type="text"
               value={form.campaignTitle}
               onChange={(e) => set('campaignTitle', e.target.value)}
-              required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
             />
           </div>
@@ -237,20 +411,101 @@ export default function LandingPageCreatePage({ onNavigate }) {
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Offer Price
+              </label>
+              <input
+                type="number"
+                value={form.price}
+                onChange={(e) => set('price', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Regular Price
+              </label>
+              <input
+                type="number"
+                value={form.originalPrice}
+                onChange={(e) => set('originalPrice', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Phone
+              </label>
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => set('phone', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Prize Image (Optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => set('prizeImage', e.target.files[0] ?? null)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200"
+            />
+            <ImagePreview
+              src={getPreviewImageSrc(form.prizeImage, form.prizeImageUrl)}
+              title={form.prizeImage ? 'New prize image' : 'Saved prize image'}
+              note={form.prizeImage ? `New selected: ${form.prizeImage.name}` : 'This image is loaded from backend.'}
+              aspect="wide"
+            />
+          </div>
+
           {/* Review Image(s) */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
               Review Image (Optional)
             </label>
+            {form.savedReviewImages.length > 0 && (
+              <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+                {form.savedReviewImages.map((src, idx) => (
+                  <div key={`${src}-${idx}`} className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                    <img src={src} alt={`Saved review ${idx + 1}`} className="h-28 w-full object-cover" />
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-[11px] font-semibold text-gray-600">Review #{idx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSavedReviewImage(idx)}
+                        className="rounded bg-red-50 p-1 text-red-500 hover:bg-red-100"
+                        title="Remove saved review image"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
-              {form.reviewImages.map((_, idx) => (
-                <input
-                  key={idx}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setReviewImage(idx, e.target.files[0] ?? null)}
-                  className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200"
-                />
+              {form.reviewImages.map((file, idx) => (
+                <div key={idx} className="min-w-[220px] flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setReviewImage(idx, e.target.files[0] ?? null)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200"
+                  />
+                  {file ? (
+                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                      <img src={getPreviewImageSrc(file)} alt={`New review ${idx + 1}`} className="h-24 w-full object-cover" />
+                      <p className="px-2 py-1 text-[11px] font-semibold text-gray-500">{file.name}</p>
+                    </div>
+                  ) : null}
+                </div>
               ))}
               <button
                 type="button"
@@ -331,17 +586,34 @@ export default function LandingPageCreatePage({ onNavigate }) {
               <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Campaign Template
               </label>
-              <select
-                value={form.campaignTemplate}
-                onChange={(e) => set('campaignTemplate', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-blue-400"
-              >
-                {TEMPLATES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  value={form.campaignTemplate}
+                  onChange={(e) => set('campaignTemplate', e.target.value)}
+                  className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-blue-400"
+                >
+                  {TEMPLATES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTemplate(form.campaignTemplate)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Eye size={13} />
+                  Preview
+                </button>
+              </div>
             </div>
           </div>
+
+          <TemplatePicker
+            selected={form.campaignTemplate}
+            content={previewContent}
+            onSelect={(template) => set('campaignTemplate', template)}
+            onPreview={setPreviewTemplate}
+          />
 
           {/* Status toggle */}
           <div>
@@ -365,13 +637,340 @@ export default function LandingPageCreatePage({ onNavigate }) {
           <div>
             <button
               type="submit"
+              disabled={saving}
               className="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition"
             >
-              Submit
+              {saving ? 'Saving...' : isEdit ? 'Update' : 'Submit'}
             </button>
           </div>
         </form>
       </div>
+
+      {previewTemplate && (
+        <TemplatePreviewModal
+          template={previewTemplate}
+          selected={form.campaignTemplate}
+          content={previewContent}
+          onClose={() => setPreviewTemplate(null)}
+          onUse={(template) => {
+            set('campaignTemplate', template);
+            setPreviewTemplate(null);
+          }}
+        />
+      )}
     </div>
   );
+}
+
+function TemplatePicker({ selected, content, onSelect, onPreview }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <label className="block text-xs font-semibold text-gray-700">Template Preview</label>
+        <span className="text-[11px] font-semibold text-gray-400">Select before submit</span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {TEMPLATES.map((template) => {
+          const active = selected === template;
+          return (
+            <button
+              key={template}
+              type="button"
+              onClick={() => onSelect(template)}
+              className={`group overflow-hidden rounded-lg border bg-white text-left shadow-sm transition ${
+                active ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-300'
+              }`}
+            >
+              <TemplateThumbnail template={template} content={content} />
+              <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-3 py-2">
+                <div>
+                  <p className="text-xs font-bold text-gray-800">{template}</p>
+                  <p className="text-[11px] text-gray-500">{getTemplateDescription(template)}</p>
+                </div>
+                {active ? <CheckCircle2 size={16} className="text-blue-600" /> : null}
+              </div>
+              <div className="border-t border-gray-100 px-3 py-2">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onPreview(template);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onPreview(template);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Eye size={12} />
+                  Large preview
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TemplatePreviewModal({ template, selected, content, onClose, onUse }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 py-6">
+      <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">{template}</h2>
+            <p className="text-xs text-gray-500">{getTemplateDescription(template)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+            aria-label="Close template preview"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="max-h-[68vh] overflow-y-auto bg-gray-100 p-5">
+          <LargeTemplatePreview template={template} content={content} />
+        </div>
+        <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+          <span className="text-xs font-semibold text-gray-500">
+            {selected === template ? 'Currently selected' : 'Preview only'}
+          </span>
+          <button
+            type="button"
+            onClick={() => onUse(template)}
+            className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-green-600"
+          >
+            <CheckCircle2 size={14} />
+            Use this template
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TemplateThumbnail({ template, content }) {
+  if (template === 'Template Design 2') {
+    return (
+      <div className="h-36 bg-emerald-50 p-3">
+        <div className="grid h-full grid-cols-[0.9fr_1.1fr] gap-2">
+          <PreviewImage src={content.bannerImage} alt={content.productName} className="rounded bg-gradient-to-br from-emerald-300 to-slate-700" />
+          <div className="min-w-0 space-y-1.5">
+            <p className="inline-flex max-w-full rounded bg-emerald-200 px-2 py-0.5 text-[9px] font-black text-emerald-800">
+              Premium Campaign
+            </p>
+            <p className="line-clamp-2 text-[12px] font-black leading-tight text-slate-950">{content.title}</p>
+            <p className="line-clamp-2 text-[10px] leading-snug text-slate-600">{content.subTitle}</p>
+            <div className="mt-1 flex items-center gap-1">
+              <span className="rounded bg-slate-950 px-2 py-1 text-[10px] font-black text-white">{formatPreviewMoney(content.price)}</span>
+              {content.originalPrice ? <span className="text-[9px] text-slate-400 line-through">{formatPreviewMoney(content.originalPrice)}</span> : null}
+            </div>
+            <div className="grid grid-cols-3 gap-1 pt-1">
+              <div className="h-6 rounded bg-white" />
+              <div className="h-6 rounded bg-white" />
+              <div className="h-6 rounded bg-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (template === 'Template Design 3') {
+    return (
+      <div className="h-36 bg-slate-950 p-3">
+        <div className="grid h-full grid-cols-[1fr_0.7fr] gap-2">
+          <div className="relative overflow-hidden rounded bg-gradient-to-r from-slate-900 via-slate-700 to-red-500 p-3">
+            <PreviewImage src={content.bannerImage} alt={content.productName} className="absolute inset-0 h-full w-full opacity-35" />
+            <div className="relative">
+              <p className="inline-flex rounded bg-red-400 px-2 py-0.5 text-[9px] font-black text-white">Limited</p>
+              <p className="mt-2 line-clamp-2 text-[13px] font-black leading-tight text-white">{content.title}</p>
+              <p className="mt-1 line-clamp-2 text-[9px] leading-snug text-slate-200">{content.subTitle}</p>
+              <div className="mt-2 inline-flex rounded bg-emerald-500 px-2 py-1 text-[10px] font-black text-white">
+                {formatPreviewMoney(content.price)}
+              </div>
+            </div>
+          </div>
+          <div className="rounded bg-white p-2">
+            <p className="truncate text-[10px] font-black text-slate-900">Quick Order</p>
+            <div className="mt-2 space-y-1">
+              <div className="h-5 rounded bg-slate-100" />
+              <div className="h-5 rounded bg-slate-100" />
+              <div className="h-5 rounded bg-slate-100" />
+            </div>
+            <div className="mt-2 h-6 rounded bg-indigo-500" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-36 bg-[#fbfaf6] p-3">
+      <div className="mx-auto h-5 w-5 rounded-full bg-amber-500" />
+      <div className="mt-2 rounded bg-yellow-100 p-2">
+        <p className="line-clamp-1 text-center text-[10px] font-black text-red-600">{content.title}</p>
+        <p className="line-clamp-1 text-center text-[9px] font-bold text-emerald-700">{content.subTitle}</p>
+      </div>
+      <div className="relative mt-2 overflow-hidden rounded bg-slate-900 p-3">
+        <PreviewImage src={content.bannerImage} alt={content.productName} className="absolute inset-0 h-full w-full opacity-30" />
+        <div className="relative">
+          <p className="line-clamp-1 text-[11px] font-black text-amber-300">{content.productName}</p>
+          <p className="mt-1 text-[16px] font-black text-yellow-300">{formatPreviewMoney(content.price)}</p>
+          {content.originalPrice ? <p className="text-[9px] text-slate-300 line-through">{formatPreviewMoney(content.originalPrice)}</p> : null}
+          <div className="mt-2 grid grid-cols-5 gap-1">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-5 rounded bg-amber-500" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LargeTemplatePreview({ template, content }) {
+  return (
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <TemplateThumbnail template={template} content={content} />
+      <div className="grid gap-4 p-5 md:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <h3 className="text-xl font-black text-gray-900">{content.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600">{content.subTitle}</p>
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-gray-500">{content.shortDescription}</p>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <MetricBox label="Product" value={content.productName} />
+            <MetricBox label="Offer" value={formatPreviewMoney(content.price)} />
+            <MetricBox label="Phone" value={content.phone} />
+          </div>
+        </div>
+        <div className="rounded border border-gray-200 bg-gray-50 p-4">
+          <p className="text-sm font-black text-gray-900">Order Summary</p>
+          <div className="mt-3 space-y-2">
+            <div className="h-9 rounded bg-white" />
+            <div className="h-9 rounded bg-white" />
+            <div className="h-9 rounded bg-white" />
+            <div className="h-10 rounded bg-indigo-500" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getTemplateDescription(template) {
+  if (template === 'Template Design 2') return 'Product-focused light layout';
+  if (template === 'Template Design 3') return 'Dark quick-order layout';
+  return 'Classic campaign landing layout';
+}
+
+function PreviewImage({ src, alt, className }) {
+  if (!src) return <div className={className} />;
+  return <img src={src} alt={alt} className={`${className} object-cover`} />;
+}
+
+function MetricBox({ label, value }) {
+  return (
+    <div className="min-h-20 rounded border border-gray-100 bg-gray-50 p-3">
+      <p className="text-[10px] font-black uppercase text-gray-400">{label}</p>
+      <p className="mt-1 line-clamp-2 text-xs font-bold text-gray-800">{value}</p>
+    </div>
+  );
+}
+
+function formatPreviewMoney(value) {
+  const amount = Number(value || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return '0 টাকা';
+  return `${amount.toLocaleString('en-BD')} টাকা`;
+}
+
+function stripPreviewText(value) {
+  return String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPreviewImageSrc(file, fallback = '') {
+  return file ? URL.createObjectURL(file) : fallback;
+}
+
+function parseReviewImages(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function ImagePreview({ src, title, note, aspect = 'wide' }) {
+  if (!src) {
+    return (
+      <div className="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-4 text-xs font-semibold text-gray-400">
+        No saved image found from backend.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
+        <span className="text-xs font-semibold text-gray-700">{title}</span>
+        <span className="text-[11px] font-semibold text-green-600">Backend image</span>
+      </div>
+      <img
+        src={src}
+        alt={title}
+        className={`w-full object-cover ${aspect === 'wide' ? 'h-36' : 'h-28'}`}
+      />
+      {note && <p className="px-3 py-2 text-[11px] text-gray-500">{note}</p>}
+    </div>
+  );
+}
+
+function buildFormState(campaign) {
+  return {
+    productId: campaign?.productId ? String(campaign.productId) : '',
+    bannerImage: null,
+    bannerImageUrl: campaign?.bannerImageUrl || '',
+    prizeImage: null,
+    prizeImageUrl: campaign?.prizeImageUrl || '',
+    campaignTitle: campaign?.title || campaign?.campaignTitle || '',
+    subTitle: campaign?.subTitle || '',
+    shortDescription: campaign?.shortDescription || '',
+    video: campaign?.video || '',
+    reviewTitle: campaign?.reviewTitle || '',
+    reviewImages: [null],
+    savedReviewImages: parseReviewImages(campaign?.reviewImages),
+    descriptionTitle: campaign?.descriptionTitle || '',
+    description: campaign?.description || '',
+    whyChooseTitle: campaign?.whyChooseTitle || '',
+    whyChooseUs: campaign?.whyChooseUs || '',
+    price: campaign?.price || '',
+    originalPrice: campaign?.originalPrice || '',
+    phone: campaign?.phone || '',
+    countdownTime: campaign?.countdown || campaign?.countdownTime || '',
+    campaignTemplate: campaign?.template || campaign?.campaignTemplate || TEMPLATES[0],
+    status: campaign?.status ?? true,
+  };
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { userService } from '../../services/adminService';
-
-const ROLES = ['superAdmin', 'admin', 'accountant', 'inventor', 'manager', 'staff', 'user'];
+import { useRolePermissions } from '../../hooks/useAdmin';
 
 export default function AdminUserEditPage({ user, onSave, onNavigate }) {
   const isEdit = Boolean(user?.Id);
+  const { data: roles, loading: rolesLoading, error: rolesError } = useRolePermissions();
   const [form, setForm] = useState({
     FirstName:       user?.FirstName ?? '',
     LastName:        user?.LastName  ?? '',
@@ -106,9 +106,15 @@ export default function AdminUserEditPage({ user, onSave, onNavigate }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Role <span className="text-red-500">*</span></label>
               <select value={form.role} onChange={(e) => set('role', e.target.value)}
+                disabled={rolesLoading}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
-                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                {rolesLoading && <option value={form.role}>Loading roles...</option>}
+                {!rolesLoading && roles.length === 0 && <option value="">No roles found</option>}
+                {!rolesLoading && roles.map((role) => (
+                  <option key={role.Id ?? role.role} value={role.role}>{role.role}</option>
+                ))}
               </select>
+              {rolesError && <p className="mt-1 text-[11px] font-semibold text-red-500">{rolesError}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

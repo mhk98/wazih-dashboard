@@ -1,14 +1,35 @@
-import { Pencil, X } from 'lucide-react';
+import { useState } from 'react';
+import { Pencil, Plus, X } from 'lucide-react';
 import { useRolePermissions } from '../../hooks/useAdmin';
 import { rolePermissionService } from '../../services/adminService';
 
 export default function AdminRolesPage({ onEditRole }) {
   const { data: roles, loading, error, refetch } = useRolePermissions();
+  const [roleName, setRoleName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    const role = roleName.trim();
+    if (!role) return;
+    setSaving(true);
+    setFormError('');
+    try {
+      await rolePermissionService.create({ role, menuPermissions: [] });
+      setRoleName('');
+      refetch();
+    } catch (err) {
+      setFormError(err.message || 'Role create failed');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleDelete(roleRow) {
-    if (!window.confirm(`"${roleRow.role}" permissions মুছে ফেলবেন?`)) return;
+    if (!window.confirm(`"${roleRow.role}" role delete করবেন?`)) return;
     try {
-      await rolePermissionService.update(roleRow.role, []);
+      await rolePermissionService.delete(roleRow.role);
       refetch();
     } catch (err) {
       alert(err.message);
@@ -20,6 +41,27 @@ export default function AdminRolesPage({ onEditRole }) {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-800">Roles Manage</h1>
       </div>
+
+      <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 shadow">
+        <div className="min-w-[260px] flex-1">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Create Dynamic Role</label>
+          <input
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
+            placeholder="e.g. salesManager"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          />
+          {formError && <p className="mt-1 text-[11px] font-semibold text-red-500">{formError}</p>}
+        </div>
+        <button
+          type="submit"
+          disabled={saving || !roleName.trim()}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+        >
+          <Plus size={14} />
+          {saving ? 'Creating...' : 'Add Role'}
+        </button>
+      </form>
 
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -52,7 +94,7 @@ export default function AdminRolesPage({ onEditRole }) {
                         className="w-7 h-7 rounded bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition">
                         <Pencil size={13} />
                       </button>
-                      <button type="button" title="Clear Permissions" onClick={() => handleDelete(role)}
+                      <button type="button" title="Delete Role" onClick={() => handleDelete(role)}
                         className="w-7 h-7 rounded bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition">
                         <X size={13} />
                       </button>

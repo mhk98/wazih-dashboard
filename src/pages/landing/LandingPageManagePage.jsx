@@ -1,31 +1,49 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, ChevronDown, Search, Eye, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const MOCK_CAMPAIGNS = [
-  { id: 1, product: 'Product A', title: 'Summer Sale Campaign', template: 'Template Design 1', status: true, countdown: '2025-08-31' },
-  { id: 2, product: 'Product B', title: 'Eid Special Offer', template: 'Template Design 2', status: false, countdown: '2025-04-10' },
-  { id: 3, product: 'Product C', title: 'New Year Mega Deal', template: 'Template Design 1', status: true, countdown: '2025-12-31' },
-];
+import { landingPageService } from '../../services/landingPageService';
 
 const PAGE_SIZES = [10, 20, 30, 50];
 
-export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
-  const [campaigns, setCampaigns] = useState(MOCK_CAMPAIGNS);
+export default function LandingPageManagePage({ onNavigate, onViewCampaign, onEditCampaign }) {
+  const [campaigns, setCampaigns] = useState([]);
   const [selected, setSelected] = useState([]);
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    landingPageService.getAll({ searchTerm: appliedSearch, page, limit: perPage })
+      .then((res) => {
+        if (active) {
+          setCampaigns(res.data || []);
+          setError('');
+        }
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Landing pages fetch failed.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [appliedSearch, page, perPage]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return campaigns;
-    const q = search.toLowerCase();
+    if (!appliedSearch.trim()) return campaigns;
+    const q = appliedSearch.toLowerCase();
     return campaigns.filter(
       (c) =>
-        c.title.toLowerCase().includes(q) ||
-        c.product.toLowerCase().includes(q) ||
-        c.template.toLowerCase().includes(q)
+        String(c.title || '').toLowerCase().includes(q) ||
+        String(c.product || '').toLowerCase().includes(q) ||
+        String(c.template || '').toLowerCase().includes(q)
     );
-  }, [search, campaigns]);
+  }, [appliedSearch, campaigns]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, totalPages);
@@ -33,7 +51,7 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
 
   function toggleAll() {
     if (selected.length === paged.length && paged.length > 0) setSelected([]);
-    else setSelected(paged.map((c) => c.id));
+    else setSelected(paged.map((c) => c.Id));
   }
 
   function toggleOne(id) {
@@ -41,17 +59,32 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
   }
 
   function deleteSelected() {
-    setCampaigns((prev) => prev.filter((c) => !selected.includes(c.id)));
-    setSelected([]);
+    Promise.all(selected.map((id) => landingPageService.delete(id)))
+      .then(() => {
+        setCampaigns((prev) => prev.filter((c) => !selected.includes(c.Id)));
+        setSelected([]);
+      })
+      .catch((err) => setError(err.message || 'Delete failed.'));
   }
 
   function deleteSingle(id) {
-    setCampaigns((prev) => prev.filter((c) => c.id !== id));
-    setSelected((prev) => prev.filter((x) => x !== id));
+    landingPageService.delete(id)
+      .then(() => {
+        setCampaigns((prev) => prev.filter((c) => c.Id !== id));
+        setSelected((prev) => prev.filter((x) => x !== id));
+      })
+      .catch((err) => setError(err.message || 'Delete failed.'));
   }
 
   function toggleStatus(id) {
-    setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, status: !c.status } : c)));
+    const campaign = campaigns.find((c) => c.Id === id);
+    if (!campaign) return;
+    landingPageService.update(id, { ...campaign, status: !campaign.status })
+      .then((res) => {
+        const updated = res.data || { ...campaign, status: !campaign.status };
+        setCampaigns((prev) => prev.map((c) => (c.Id === id ? updated : c)));
+      })
+      .catch((err) => setError(err.message || 'Status update failed.'));
   }
 
   return (
@@ -109,11 +142,12 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
             type="text"
             placeholder="Search campaigns..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-600 w-48 focus:outline-none focus:ring-2 focus:ring-blue-300"
           />
           <button
             type="button"
+            onClick={() => { setAppliedSearch(search); setPage(1); }}
             className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-1.5 rounded flex items-center gap-1 transition"
           >
             <Search size={12} />
@@ -125,6 +159,7 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
       {/* Table */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="overflow-x-auto">
+          {error && <div className="px-4 py-3 text-xs text-red-500">{error}</div>}
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
@@ -146,19 +181,25 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
               </tr>
             </thead>
             <tbody>
-              {paged.map((c, i) => (
+              {loading && (
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-gray-400">Loading...</td>
+                </tr>
+              )}
+              {!loading && paged.map((c, i) => (
                 <CampaignRow
-                  key={c.id}
+                  key={c.Id}
                   campaign={c}
                   index={(currentPage - 1) * perPage + i + 1}
-                  checked={selected.includes(c.id)}
-                  onToggle={() => toggleOne(c.id)}
-                  onDelete={() => deleteSingle(c.id)}
-                  onToggleStatus={() => toggleStatus(c.id)}
+                  checked={selected.includes(c.Id)}
+                  onToggle={() => toggleOne(c.Id)}
+                  onDelete={() => deleteSingle(c.Id)}
+                  onToggleStatus={() => toggleStatus(c.Id)}
                   onView={() => onViewCampaign && onViewCampaign(c)}
+                  onEdit={() => onEditCampaign && onEditCampaign(c)}
                 />
               ))}
-              {paged.length === 0 && (
+              {!loading && paged.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center py-12 text-gray-400">
                     No campaigns found.
@@ -203,7 +244,7 @@ export default function LandingPageManagePage({ onNavigate, onViewCampaign }) {
   );
 }
 
-function CampaignRow({ campaign, index, checked, onToggle, onDelete, onToggleStatus, onView }) {
+function CampaignRow({ campaign, index, checked, onToggle, onDelete, onToggleStatus, onView, onEdit }) {
   return (
     <tr className={`border-b border-gray-50 transition ${checked ? 'bg-blue-50' : 'hover:bg-gray-50/60'}`}>
       <td className="px-3 py-2.5 text-center">
@@ -236,7 +277,7 @@ function CampaignRow({ campaign, index, checked, onToggle, onDelete, onToggleSta
       <td className="px-3 py-2.5 text-center">
         <div className="flex items-center justify-center gap-1">
           <ActionBtn icon={<Eye size={12} />} color="bg-cyan-100 text-cyan-600 hover:bg-cyan-200" title="View" onClick={onView} />
-          <ActionBtn icon={<Edit2 size={12} />} color="bg-blue-100 text-blue-600 hover:bg-blue-200" title="Edit" />
+          <ActionBtn icon={<Edit2 size={12} />} color="bg-blue-100 text-blue-600 hover:bg-blue-200" title="Edit" onClick={onEdit} />
           <ActionBtn icon={<Trash2 size={12} />} color="bg-red-100 text-red-500 hover:bg-red-200" title="Delete" onClick={onDelete} />
         </div>
       </td>

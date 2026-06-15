@@ -19,6 +19,9 @@ import { brandService } from '../../services/productService';
 export default function BrandCreatePage({ onNavigate }) {
   const [name, setName] = useState('');
   const [imageName, setImageName] = useState('No file chosen');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDesc, setMetaDesc] = useState('');
+  const [metaKeyword, setMetaKeyword] = useState('');
   const [status, setStatus] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -65,7 +68,7 @@ export default function BrandCreatePage({ onNavigate }) {
           <label className="flex items-center border border-gray-300 rounded overflow-hidden cursor-pointer w-full">
             <span className="bg-white border-r border-gray-300 px-3 py-2 text-xs text-gray-600 whitespace-nowrap hover:bg-gray-50 transition">Choose file</span>
             <span className="px-3 text-xs text-gray-400 flex-1 truncate">{imageName}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; if (f) { setImageFile(f); setImageName(f.name); } }} />
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; setImageName(f?.name || 'No file chosen'); }} />
           </label>
         </div>
 

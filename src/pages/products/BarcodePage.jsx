@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, Video } from 'lucide-react';
+import { ChevronDown, Printer, Video } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 
 export default function BarcodePage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [generatedProduct, setGeneratedProduct] = useState(null);
   const [search, setSearch] = useState('');
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState('');
 
   const { data: allProducts } = useProducts({ limit: 200 });
 
@@ -20,7 +22,21 @@ export default function BarcodePage() {
   function handleSelect(product) {
     setSelectedProduct(product);
     setSearch('');
+    setError('');
     setIsOpen(false);
+  }
+
+  function handleSubmit() {
+    if (!selectedProduct) {
+      setError('Please select a product.');
+      return;
+    }
+    setError('');
+    setGeneratedProduct(selectedProduct);
+  }
+
+  function handlePrint() {
+    window.print();
   }
 
   return (
@@ -79,13 +95,96 @@ export default function BarcodePage() {
             </div>
           )}
         </div>
+        {error && <p className="mt-2 text-xs font-semibold text-red-500">{error}</p>}
+
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+          >
+            Submit
+          </button>
+        </div>
       </div>
+
+      {generatedProduct && (
+        <div className="mt-12 flex flex-col items-center gap-9">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="print:hidden flex h-7 w-8 items-center justify-center rounded bg-emerald-500 text-white transition hover:bg-emerald-600"
+            title="Print barcode"
+          >
+            <Printer size={14} />
+          </button>
+
+          <BarcodeCard product={generatedProduct} />
+        </div>
+      )}
     </div>
   );
 }
 
 function productLabel(product) {
-  return `${product.name}${product.price ? ` - ${product.price}` : ''}`;
+  const price = getProductPrice(product);
+  return `${product.name}${price ? ` - ${price}` : ''}`;
+}
+
+function BarcodeCard({ product }) {
+  const code = String(product.sku || 'N/A');
+  const price = getProductPrice(product);
+  const bars = buildBarcodeBars(code);
+
+  return (
+    <div id="product-barcode-card" className="w-full max-w-[465px] bg-white px-3 py-3 text-center shadow-sm print:shadow-none">
+      <h2 className="text-2xl font-bold text-gray-500">Wazih</h2>
+      <p className="mt-1 text-base font-extrabold leading-tight text-black">{product.name}</p>
+      <p className="mt-1 text-sm font-bold text-black">Price: {price || 'N/A'} Tk</p>
+
+      <div className="mt-3 flex h-[84px] items-stretch justify-center overflow-hidden">
+        {bars.map((bar, index) => (
+          <span
+            key={`${bar.width}-${index}`}
+            className={bar.black ? 'bg-black' : 'bg-white'}
+            style={{ width: `${bar.width}px` }}
+          />
+        ))}
+      </div>
+
+      <p className="mt-2 text-base font-extrabold text-black">{code}</p>
+    </div>
+  );
+}
+
+function getProductPrice(product) {
+  const variationPrice = Array.isArray(product.variations)
+    ? product.variations.find((variation) => variation?.newPrice || variation?.oldPrice)?.newPrice
+      || product.variations.find((variation) => variation?.newPrice || variation?.oldPrice)?.oldPrice
+    : null;
+  return product.price || product.newPrice || product.salePrice || variationPrice || product.advanceAmount || '';
+}
+
+function buildBarcodeBars(value) {
+  const source = value || 'N/A';
+  const bits = source
+    .split('')
+    .map((char) => char.charCodeAt(0).toString(2).padStart(8, '0'))
+    .join('');
+  const framedBits = `1010${bits}0101`;
+  const bars = [];
+  let black = true;
+
+  for (let i = 0; i < framedBits.length; i += 1) {
+    const bit = framedBits[i];
+    bars.push({
+      black,
+      width: bit === '1' ? 4 : 2,
+    });
+    black = !black;
+  }
+
+  return bars;
 }
 
 function OptionRow({ active, onClick, children }) {

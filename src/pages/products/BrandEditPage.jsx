@@ -18,6 +18,11 @@ import { brandService } from '../../services/productService';
 
 export default function BrandEditPage({ brand, onNavigate }) {
   const [name, setName] = useState(brand?.name || '');
+  const [imageFile, setImageFile] = useState(null);
+  const [imageName, setImageName] = useState('No file chosen');
+  const [metaTitle, setMetaTitle] = useState(brand?.metaTitle || '');
+  const [metaDesc, setMetaDesc] = useState(brand?.metaDescription || '');
+  const [metaKeyword, setMetaKeyword] = useState(brand?.metaKeyword || '');
   const [status, setStatus] = useState(brand?.status === 'Active' || brand?.status === 'active');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);

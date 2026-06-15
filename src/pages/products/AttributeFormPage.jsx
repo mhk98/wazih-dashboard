@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Video } from 'lucide-react';
+import { attributeService } from '../../services/productService';
 
 const inputCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-400 bg-white';
 
@@ -17,17 +18,34 @@ function Toggle({ checked, onChange }) {
 
 export default function AttributeFormPage({ attribute, mode = 'create', onNavigate }) {
   const [name, setName] = useState(attribute?.name || '');
-  const [status, setStatus] = useState((attribute?.status || 'active') === 'active');
+  const [status, setStatus] = useState((attribute?.status || 'Active').toLowerCase() === 'active');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const isEdit = mode === 'edit';
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!name.trim()) {
       setError('Attribute name is required.');
       return;
     }
     setError('');
-    onNavigate && onNavigate('attribute');
+    setSaving(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        status: status ? 'Active' : 'Inactive',
+      };
+      if (isEdit && attribute?.Id) {
+        await attributeService.update(attribute.Id, payload);
+      } else {
+        await attributeService.create(payload);
+      }
+      onNavigate && onNavigate('attribute');
+    } catch (e) {
+      setError(e.message || 'Attribute save failed.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -74,9 +92,10 @@ export default function AttributeFormPage({ attribute, mode = 'create', onNaviga
         <button
           type="button"
           onClick={handleSubmit}
-          className="mt-6 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded transition"
+          disabled={saving}
+          className="mt-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-sm font-semibold px-4 py-2 rounded transition"
         >
-          Submit
+          {saving ? 'Saving...' : 'Submit'}
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ export const orderService = {
   getOrders: (params = {}) => apiRequest(`/orders${buildQuery(params)}`),
   getStatusCounts: () => apiRequest("/orders/status-counts"),
   getOrderById: (id) => apiRequest(`/orders/${id}`),
+  trackOrders: (phone) => apiRequest(`/orders/track${buildQuery({ phone })}`),
   createOrder: (data) =>
     apiRequest("/orders", { method: "POST", body: JSON.stringify(data) }),
   updateOrder: (id, data) =>

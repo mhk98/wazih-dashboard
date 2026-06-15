@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Video } from 'lucide-react';
 import { reviewService } from '../../services/productService';
 import { useProducts } from '../../hooks/useProducts';
+import { orderService } from '../../services/orderService';
 
 const fieldCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-400';
 
@@ -25,9 +26,34 @@ export default function ReviewFormPage({ mode = 'create', review, onNavigate }) 
   const [status, setStatus] = useState((review?.status || 'approved') !== 'pending');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [orders, setOrders] = useState([]);
   const isEdit = mode === 'edit';
 
   const { data: products } = useProducts({ limit: 50 });
+  const selectedProduct = products.find((product) => String(product.Id) === String(productId));
+
+  useEffect(() => {
+    let active = true;
+    orderService.getOrders({ page: 1, limit: 500, sortBy: 'Id', sortOrder: 'DESC' })
+      .then((res) => {
+        if (active) setOrders(res.data || []);
+      })
+      .catch(() => {
+        if (active) setOrders([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const customerOptions = useMemo(() => {
+    const names = orders
+      .map((order) => order.customerName?.trim())
+      .filter(Boolean);
+    if (customerName && !names.includes(customerName)) names.unshift(customerName);
+    return [...new Set(names)];
+  }, [orders, customerName]);
 
   async function handleSubmit() {
     if (!customerName.trim() || !rating) { setError('Customer name and rating are required.'); return; }
@@ -36,6 +62,7 @@ export default function ReviewFormPage({ mode = 'create', review, onNavigate }) 
     try {
       const payload = {
         productId: productId || null,
+        productName: selectedProduct?.name || review?.productName || null,
         customerName: customerName.trim(),
         rating: Number(rating),
         comment: comment.trim(),
@@ -88,12 +115,16 @@ export default function ReviewFormPage({ mode = 'create', review, onNavigate }) 
 
           <div>
             <label className="block text-sm font-bold text-gray-500 mb-3">Customer Name *</label>
-            <input
-              type="text"
+            <select
               value={customerName}
               onChange={(e) => { setCustomerName(e.target.value); setError(''); }}
               className={fieldCls}
-            />
+            >
+              <option value="">Choose ...</option>
+              {customerOptions.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
 
           <div>

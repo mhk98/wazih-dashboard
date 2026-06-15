@@ -5,7 +5,7 @@ import { reviewService } from '../../services/productService';
 
 const exportButtons = ['Copy', 'Print', 'PDF'];
 
-export default function ReviewsPage({ onNavigate }) {
+export default function ReviewsPage({ onNavigate, onEditReview }) {
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -124,7 +124,7 @@ export default function ReviewsPage({ onNavigate }) {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
-                        <button className="flex h-7 w-8 items-center justify-center rounded bg-indigo-600 hover:bg-indigo-700 text-white transition">
+                        <button onClick={() => onEditReview && onEditReview(review)} className="flex h-7 w-8 items-center justify-center rounded bg-indigo-600 hover:bg-indigo-700 text-white transition">
                           <Edit2 size={12} />
                         </button>
                         <button onClick={() => handleDelete(review.Id)} className="flex h-7 w-8 items-center justify-center rounded bg-red-500 hover:bg-red-600 text-white transition">
