@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { useSubcategories } from '../../hooks/useProducts';
+import { useCategories, useSubcategories } from '../../hooks/useProducts';
 import { subcategoryService } from '../../services/productService';
 
 export default function SubcategoriesPage({ onNavigate, onEditSubcategory }) {
   const [search, setSearch] = useState('');
   const { data: subcategories, meta, loading, error, refetch } = useSubcategories({ searchTerm: search, limit: 100 });
+  const { data: categories } = useCategories({ limit: 200 });
+  const categoryById = new Map(categories.map((category) => [String(category.Id), category.name]));
 
   async function handleDelete(id) {
     if (!window.confirm('এই subcategory মুছে ফেলবেন?')) return;
@@ -41,6 +43,7 @@ export default function SubcategoriesPage({ onNavigate, onEditSubcategory }) {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-4 py-3 text-left text-gray-500 font-semibold">#</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-semibold">Category</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-semibold">Subcategory</th>
                 <th className="px-4 py-3 text-center text-gray-500 font-semibold">Status</th>
                 <th className="px-4 py-3 text-center text-gray-500 font-semibold">Action</th>
@@ -48,11 +51,12 @@ export default function SubcategoriesPage({ onNavigate, onEditSubcategory }) {
             </thead>
             <tbody>
               {subcategories.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-10 text-gray-400">কোনো সাবক্যাটাগরি পাওয়া যায়নি</td></tr>
+                <tr><td colSpan={5} className="text-center py-10 text-gray-400">কোনো সাবক্যাটাগরি পাওয়া যায়নি</td></tr>
               )}
               {subcategories.map((sub, i) => (
                 <tr key={sub.Id} className="border-b border-gray-50 hover:bg-gray-50/60">
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                  <td className="px-4 py-3 text-gray-600">{categoryById.get(String(sub.categoryId)) || '-'}</td>
                   <td className="px-4 py-3 font-semibold text-gray-800">{sub.name}</td>
                   <td className="px-4 py-3 text-center"><StatusBadge status={sub.status} /></td>
                   <td className="px-4 py-3 text-center">

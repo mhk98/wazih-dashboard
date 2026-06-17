@@ -87,6 +87,8 @@ import ExpenseCategoryFormPage from './pages/expense/ExpenseCategoryFormPage';
 import ExpensePage from './pages/expense/ExpensePage';
 import ExpenseFormPage from './pages/expense/ExpenseFormPage';
 import ReportsPage from './pages/reports/ReportsPage';
+import { siteSettingService } from './services/websiteService';
+import { applyDocumentFavicon, applyDocumentTitle, getFavicon, getSiteName, normalizeSettingData } from './utils/siteBranding';
 
 function getDirectLandingPageId() {
   if (typeof window === 'undefined') return '';
@@ -120,6 +122,7 @@ function App() {
   const [activeBannerPage, setActiveBannerPage] = useState('banner_category');
   const [activeExpensePage, setActiveExpensePage] = useState('expense_categories');
   const [activeReportsPage, setActiveReportsPage] = useState('stock_report');
+  const [siteSettings, setSiteSettings] = useState(null);
   const { data: suppliers } = useSupplierAllList();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -209,6 +212,29 @@ function App() {
   const [directCampaign, setDirectCampaign] = useState(null);
   const [directCampaignLoading, setDirectCampaignLoading] = useState(Boolean(directLandingPageId));
   const [directCampaignError, setDirectCampaignError] = useState('');
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let active = true;
+    const applySettings = (data) => {
+      if (!active) return;
+      const normalized = normalizeSettingData(data);
+      setSiteSettings(normalized);
+      applyDocumentFavicon(getFavicon(normalized));
+      applyDocumentTitle(getSiteName(normalized));
+    };
+
+    siteSettingService.get('general')
+      .then((res) => applySettings(res.data?.data || null))
+      .catch(() => {});
+
+    const handleUpdate = (event) => applySettings(event.detail);
+    window.addEventListener('site-settings:update', handleUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener('site-settings:update', handleUpdate);
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!directLandingPageId || !isAuthenticated) return undefined;
@@ -1200,9 +1226,10 @@ function App() {
         onExpensePageChange={setActiveExpensePage}
         activeReportsPage={activeReportsPage}
         onReportsPageChange={setActiveReportsPage}
+        siteSettings={siteSettings}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopNav />
+        <TopNav siteSettings={siteSettings} />
         {renderMain()}
       </div>
     </div>

@@ -20,19 +20,45 @@ export default function CategoryCreatePage({ onNavigate }) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState(true);
   const [frontView, setFrontView] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFile, setImageFile] = useState('');
   const [imageName, setImageName] = useState('No file chosen');
-  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerFile, setBannerFile] = useState('');
   const [bannerName, setBannerName] = useState('No file chosen');
+  const [sortOrder, setSortOrder] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  function readFile(file, setter, nameSetter) {
+    if (!file) {
+      setter('');
+      nameSetter('No file chosen');
+      return;
+    }
+    nameSetter(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setter(reader.result || '');
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit() {
     if (!name.trim()) { setError('Name is required.'); return; }
     setError('');
     setSaving(true);
     try {
-      await categoryService.create({ name: name.trim() });
+      await categoryService.create({
+        name: name.trim(),
+        status: status ? 'Active' : 'Inactive',
+        isActive: frontView,
+        frontView,
+        imageFile: imageFile || null,
+        image: imageFile || null,
+        bannerImage: bannerFile || null,
+        sortOrder: sortOrder === '' ? null : Number(sortOrder),
+        metaTitle,
+        metaDescription,
+      });
       onNavigate && onNavigate('categories');
     } catch (e) {
       setError(e.message);
@@ -84,9 +110,10 @@ export default function CategoryCreatePage({ onNavigate }) {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => { setImageFile(e.target.files[0] || null); setImageName(e.target.files[0]?.name || 'No file chosen'); }}
+              onChange={(e) => readFile(e.target.files[0], setImageFile, setImageName)}
             />
           </label>
+          {imageFile && <img src={imageFile} alt={name || 'category'} className="mt-2 h-16 w-24 rounded-lg border border-gray-200 object-cover" />}
         </div>
 
         {/* Banner Image */}
@@ -101,21 +128,27 @@ export default function CategoryCreatePage({ onNavigate }) {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => { setBannerFile(e.target.files[0] || null); setBannerName(e.target.files[0]?.name || 'No file chosen'); }}
+              onChange={(e) => readFile(e.target.files[0], setBannerFile, setBannerName)}
             />
           </label>
+          {bannerFile && <img src={bannerFile} alt="category banner" className="mt-2 h-20 w-40 rounded-lg border border-gray-200 object-cover" />}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+          <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={inputCls} />
         </div>
 
         {/* Meta Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title (Optional)</label>
-          <input type="text" className={inputCls} />
+          <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className={inputCls} />
         </div>
 
         {/* Meta Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description (Optional)</label>
-          <textarea rows={5} className={`${inputCls} resize-y`} />
+          <textarea rows={5} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className={`${inputCls} resize-y`} />
         </div>
 
         {/* Toggles */}

@@ -46,19 +46,31 @@ export default function CategoriesPage({ onNavigate, onEditCategory }) {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-4 py-3 text-left text-gray-500 font-semibold">#</th>
+                <th className="px-4 py-3 text-left text-gray-500 font-semibold">Image</th>
                 <th className="px-4 py-3 text-left text-gray-500 font-semibold">Name</th>
+                <th className="px-4 py-3 text-center text-gray-500 font-semibold">Front View</th>
                 <th className="px-4 py-3 text-center text-gray-500 font-semibold">Status</th>
                 <th className="px-4 py-3 text-center text-gray-500 font-semibold">Action</th>
               </tr>
             </thead>
             <tbody>
               {categories.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-10 text-gray-400">কোনো ক্যাটাগরি পাওয়া যায়নি</td></tr>
+                <tr><td colSpan={6} className="text-center py-10 text-gray-400">কোনো ক্যাটাগরি পাওয়া যায়নি</td></tr>
               )}
               {categories.map((cat, i) => (
                 <tr key={cat.Id} className="border-b border-gray-50 hover:bg-gray-50/60">
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
+                  <td className="px-4 py-3">
+                    {cat.imageFile || cat.image ? (
+                      <img src={cat.imageFile || cat.image} alt={cat.name} className="h-10 w-14 rounded border border-gray-200 object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-semibold text-gray-300">No image</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-semibold text-gray-800">{cat.name}</td>
+                  <td className="px-4 py-3 text-center">
+                    <StatusBadge status={cat.isActive ?? cat.frontView ? 'Active' : 'Inactive'} />
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <StatusBadge status={cat.status} />
                   </td>

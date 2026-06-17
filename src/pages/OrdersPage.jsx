@@ -159,7 +159,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
           <div className="flex items-center gap-2 flex-1 min-w-[180px]">
             <input
               type="text"
-              placeholder="ফোন নম্বর / নাম / অর্ডার ID দিয়ে খুঁজুন..."
+              placeholder="ফোন নম্বর / নাম / অর্ডার ID / IP দিয়ে খুঁজুন..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -208,6 +208,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="text-left px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">#</th>
                   <th className="text-left px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">Customer</th>
+                  <th className="text-left px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">IP</th>
                   <th className="text-left px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">Product</th>
                   <th className="text-right px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">Total Bill</th>
                   <th className="text-center px-3 py-2.5 text-gray-500 font-semibold whitespace-nowrap">Courier</th>
@@ -220,14 +221,14 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
               <tbody>
                 {loading && orders.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-gray-400">
+                    <td colSpan={10} className="text-center py-12 text-gray-400">
                       <Loader2 size={20} className="inline animate-spin mr-2" />
                       লোড হচ্ছে...
                     </td>
                   </tr>
                 ) : orders.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-12 text-gray-400">
+                    <td colSpan={10} className="text-center py-12 text-gray-400">
                       কোনো অর্ডার পাওয়া যায়নি
                     </td>
                   </tr>
@@ -303,6 +304,21 @@ function OrderRow({ order, index, onView, onEdit, onDelete }) {
           {order.customerArea && <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[10px]">{order.customerArea}</span>}
           {order.customerDistrict && <span className="bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded text-[10px]">{order.customerDistrict}</span>}
         </div>
+      </td>
+
+      <td className="px-3 py-2.5">
+        {order.ipAddress ? (
+          <button
+            type="button"
+            onClick={() => navigator.clipboard?.writeText(order.ipAddress)}
+            className="rounded bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200"
+            title="Click to copy IP"
+          >
+            {order.ipAddress}
+          </button>
+        ) : (
+          <span className="text-gray-400">—</span>
+        )}
       </td>
 
       <td className="px-3 py-2.5">

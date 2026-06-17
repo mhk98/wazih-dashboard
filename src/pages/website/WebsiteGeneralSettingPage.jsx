@@ -4,15 +4,30 @@ import {
   Link, Image, Film, Maximize2, Code, HelpCircle,
 } from 'lucide-react';
 import { siteSettingService } from '../../services/websiteService';
+import { applyDocumentFavicon, normalizeSettingData } from '../../utils/siteBranding';
 
 const SETTING_TYPE = 'general';
 
 const DEFAULT = {
   name: '', whiteLogo: null, darkLogo: null, faviconLogo: null,
+  logoFile: '', faviconFile: '',
   scrollText: '', metaTitle: '', metaKeyword: '', metaDescription: '',
+  marqueeText: '',
   bkashNumber: '', nagadNumber: '', rocketNumber: '',
   orderBlockLimit: '', blockTime: '', timeUnit: 'Hour', status: true,
 };
+
+function normalizeSettings(data = {}) {
+  const next = { ...DEFAULT, ...normalizeSettingData(data) };
+  next.whiteLogo = next.whiteLogo || next.logoFile || null;
+  next.darkLogo = next.darkLogo || next.logoFile || null;
+  next.faviconLogo = next.faviconLogo || next.faviconFile || null;
+  next.logoFile = next.logoFile || next.darkLogo || next.whiteLogo || '';
+  next.faviconFile = next.faviconFile || next.faviconLogo || '';
+  next.scrollText = next.scrollText || next.marqueeText || '';
+  next.marqueeText = next.marqueeText || next.scrollText || '';
+  return next;
+}
 
 function ToolbarBtn({ icon }) {
   return (
@@ -44,11 +59,18 @@ function RichTextEditor({ value, onChange }) {
   );
 }
 
-function LogoField({ label, value, preview, onChange }) {
+function LogoField({ label, preview, onChange }) {
+  function handleFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onChange(reader.result || '');
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label} <span className="text-red-500">*</span></label>
-      <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files[0]; if (f) onChange(URL.createObjectURL(f)); }}
+      <input type="file" accept="image/*" onChange={(e) => handleFile(e.target.files[0])}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200" />
       {preview
         ? <img src={preview} alt="logo" className="mt-2 w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm" />
@@ -67,18 +89,36 @@ export default function WebsiteGeneralSettingPage() {
 
   useEffect(() => {
     siteSettingService.get(SETTING_TYPE)
-      .then((res) => { if (res.data?.data) setForm({ ...DEFAULT, ...res.data.data }); })
+      .then((res) => { if (res.data?.data) setForm(normalizeSettings(res.data.data)); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   function set(f, v) { setForm((p) => ({ ...p, [f]: v })); }
+  function setLogo(v) {
+    setForm((p) => ({ ...p, whiteLogo: v, logoFile: v }));
+  }
+  function setDarkLogo(v) {
+    setForm((p) => ({ ...p, darkLogo: v, logoFile: p.logoFile || v }));
+  }
+  function setFavicon(v) {
+    setForm((p) => ({ ...p, faviconLogo: v, faviconFile: v }));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true); setError(''); setSuccess('');
     try {
-      await siteSettingService.upsert(SETTING_TYPE, form);
+      const payload = {
+        ...form,
+        logoFile: form.logoFile || form.darkLogo || form.whiteLogo || null,
+        faviconFile: form.faviconFile || form.faviconLogo || null,
+        marqueeText: form.marqueeText || form.scrollText || null,
+      };
+      await siteSettingService.upsert(SETTING_TYPE, payload);
+      setForm(normalizeSettings(payload));
+      applyDocumentFavicon(payload.faviconFile);
+      window.dispatchEvent(new CustomEvent('site-settings:update', { detail: payload }));
       setSuccess('Settings saved successfully');
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -109,17 +149,30 @@ export default function WebsiteGeneralSettingPage() {
               <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400" />
             </div>
-            <LogoField label="White Logo" preview={form.whiteLogo} onChange={(v) => set('whiteLogo', v)} />
+            <LogoField label="White Logo" preview={form.whiteLogo || form.logoFile} onChange={setLogo} />
           </div>
 
           <div className="grid grid-cols-2 gap-5">
-            <LogoField label="Dark Logo"    preview={form.darkLogo}    onChange={(v) => set('darkLogo', v)} />
-            <LogoField label="Favicon Logo" preview={form.faviconLogo} onChange={(v) => set('faviconLogo', v)} />
+            <LogoField label="Dark Logo"    preview={form.darkLogo || form.logoFile}    onChange={setDarkLogo} />
+            <LogoField label="Favicon Logo" preview={form.faviconLogo || form.faviconFile} onChange={setFavicon} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frontend Logo URL / File</label>
+              <input type="text" value={form.logoFile || ''} onChange={(e) => set('logoFile', e.target.value)} placeholder="https://... or uploaded file name"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frontend Favicon URL / File</label>
+              <input type="text" value={form.faviconFile || ''} onChange={(e) => set('faviconFile', e.target.value)} placeholder="https://... or uploaded file name"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400" />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Scroll Text</label>
-            <RichTextEditor value={form.scrollText} onChange={(v) => set('scrollText', v)} />
+            <RichTextEditor value={form.scrollText} onChange={(v) => { set('scrollText', v); set('marqueeText', v); }} />
           </div>
 
           <div className="grid grid-cols-2 gap-5">

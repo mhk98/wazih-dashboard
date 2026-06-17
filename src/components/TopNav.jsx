@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Menu, Maximize2, Bell, LogOut, ChevronDown, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getLogo, getSiteName } from '../utils/siteBranding';
 
-export default function TopNav() {
+export default function TopNav({ siteSettings }) {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const logo = getLogo(siteSettings);
+  const siteName = getSiteName(siteSettings);
 
   const displayName = user
     ? [user.FirstName, user.LastName].filter(Boolean).join(' ') || user.Email
@@ -31,6 +34,13 @@ export default function TopNav() {
         <button className="p-1 hover:bg-gray-100 rounded">
           <Menu size={20} className="text-gray-600" />
         </button>
+
+        {(logo || siteName) && (
+          <div className="hidden sm:flex items-center gap-2 pr-2 border-r border-gray-200">
+            {logo && <img src={logo} alt={siteName || 'Logo'} className="h-8 w-8 rounded-full object-cover border border-gray-200" />}
+            {siteName && <span className="text-sm font-bold text-gray-800 max-w-[120px] truncate">{siteName}</span>}
+          </div>
+        )}
 
         <div className="flex items-center gap-2 flex-wrap">
           <NavBtn color="bg-green-500" label="Visit Site" />

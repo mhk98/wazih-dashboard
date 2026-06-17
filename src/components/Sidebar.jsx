@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Package, Truck, ShoppingBag,
   Globe, Shield, Users, Settings, Zap, Megaphone, BookOpen,
@@ -11,6 +11,8 @@ import {
   Bike, Banknote, MessageSquare, ShieldAlert,
   Cpu, Ticket, LayoutGrid, Activity, FileText, Folder, TrendingUp,
 } from 'lucide-react';
+import { siteSettingService } from '../services/websiteService';
+import { applyDocumentFavicon, getFavicon, getLogo, getSiteName, normalizeSettingData } from '../utils/siteBranding';
 
 // ── Orders submenu ──────────────────────────────────────────
 const orderSubMenuItems = [
@@ -128,7 +130,8 @@ const productSubMenuItems = [
   { key: 'reviews', label: 'Reviews', icon: Star, color: 'text-yellow-400' },
 ];
 
-export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onOrderStatusChange, orderCounts = {}, activeProductPage, onProductPageChange, activeSupplierPage, onSupplierPageChange, activePurchasePage, onPurchasePageChange, activeLandingPage, onLandingPageChange, activeAdminPage, onAdminPageChange, activeCustomersPage, onCustomersPageChange, activeWebsitePage, onWebsitePageChange, activeApiPage, onApiPageChange, activeMarketingPage, onMarketingPageChange, activeBlogsPage, onBlogsPageChange, activeBannerPage, onBannerPageChange, activeExpensePage, onExpensePageChange, activeReportsPage, onReportsPageChange }) {
+export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onOrderStatusChange, orderCounts = {}, activeProductPage, onProductPageChange, activeSupplierPage, onSupplierPageChange, activePurchasePage, onPurchasePageChange, activeLandingPage, onLandingPageChange, activeAdminPage, onAdminPageChange, activeCustomersPage, onCustomersPageChange, activeWebsitePage, onWebsitePageChange, activeApiPage, onApiPageChange, activeMarketingPage, onMarketingPageChange, activeBlogsPage, onBlogsPageChange, activeBannerPage, onBannerPageChange, activeExpensePage, onExpensePageChange, activeReportsPage, onReportsPageChange, siteSettings: externalSiteSettings }) {
+  const [siteSettings, setSiteSettings] = useState(externalSiteSettings || null);
   const [ordersOpen, setOrdersOpen] = useState(activePage === 'orders');
   const [productsOpen, setProductsOpen] = useState(activePage === 'products');
   const [supplierOpen, setSupplierOpen] = useState(activePage === 'supplier');
@@ -143,6 +146,30 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
   const [bannerOpen, setBannerOpen] = useState(activePage === 'banner');
   const [expenseOpen, setExpenseOpen] = useState(activePage === 'expense');
   const [reportsOpen, setReportsOpen] = useState(activePage === 'reports');
+  const currentSettings = externalSiteSettings || siteSettings;
+  const currentLogo = getLogo(currentSettings);
+  const siteName = getSiteName(currentSettings);
+
+  useEffect(() => {
+    let active = true;
+    const applySettings = (data) => {
+      if (!active) return;
+      const normalized = normalizeSettingData(data);
+      setSiteSettings(normalized || null);
+      applyDocumentFavicon(getFavicon(normalized));
+    };
+    siteSettingService.get('general')
+      .then((res) => {
+        applySettings(res.data?.data || null);
+      })
+      .catch(() => {});
+    const handleSettingsUpdate = (event) => applySettings(event.detail);
+    window.addEventListener('site-settings:update', handleSettingsUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener('site-settings:update', handleSettingsUpdate);
+    };
+  }, []);
 
   function handleOrdersClick() {
     const next = !ordersOpen;
@@ -253,13 +280,16 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-4 border-b border-blue-800 flex-shrink-0">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
-          <span style={{ fontFamily: 'serif' }}>وجيه</span>
-        </div>
-        <div>
-          <div className="text-white font-bold text-base leading-tight">Wazih</div>
-          <div className="text-blue-300 text-xs">ওয়াজিহ</div>
-        </div>
+        {currentLogo && (
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10">
+            <img src={currentLogo} alt={siteName || 'Logo'} className="h-10 w-10 rounded-full object-cover" />
+          </div>
+        )}
+        {siteName && (
+          <div>
+            <div className="text-white font-bold text-base leading-tight">{siteName}</div>
+          </div>
+        )}
       </div>
 
       <nav className="py-2 flex-1">

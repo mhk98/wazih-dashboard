@@ -18,17 +18,46 @@ const inputCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-g
 export default function CategoryEditPage({ category, onNavigate }) {
   const [name, setName] = useState(category?.name || '');
   const [status, setStatus] = useState(category?.status === 'Active' || category?.status === 'active');
+  const [frontView, setFrontView] = useState(Boolean(category?.isActive ?? category?.frontView));
+  const [imageFile, setImageFile] = useState(category?.imageFile || category?.image || '');
+  const [bannerFile, setBannerFile] = useState(category?.bannerImage || '');
   const [imageName, setImageName] = useState('No file chosen');
   const [bannerName, setBannerName] = useState('No file chosen');
+  const [sortOrder, setSortOrder] = useState(category?.sortOrder ?? '');
+  const [metaTitle, setMetaTitle] = useState(category?.metaTitle || '');
+  const [metaDescription, setMetaDescription] = useState(category?.metaDescription || '');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  function readFile(file, setter, nameSetter) {
+    if (!file) {
+      setter('');
+      nameSetter('No file chosen');
+      return;
+    }
+    nameSetter(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setter(reader.result || '');
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit() {
     if (!name.trim()) { setError('Name is required.'); return; }
     setError('');
     setSaving(true);
     try {
-      await categoryService.update(category.Id, { name: name.trim(), status: status ? 'Active' : 'Inactive' });
+      await categoryService.update(category.Id, {
+        name: name.trim(),
+        status: status ? 'Active' : 'Inactive',
+        isActive: frontView,
+        frontView,
+        imageFile: imageFile || null,
+        image: imageFile || null,
+        bannerImage: bannerFile || null,
+        sortOrder: sortOrder === '' ? null : Number(sortOrder),
+        metaTitle,
+        metaDescription,
+      });
       onNavigate && onNavigate('categories');
     } catch (e) {
       setError(e.message);
@@ -77,10 +106,10 @@ export default function CategoryEditPage({ category, onNavigate }) {
               Choose file
             </span>
             <span className="px-3 text-xs text-gray-400 flex-1">{imageName}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageName(e.target.files[0]?.name || 'No file chosen')} />
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0], setImageFile, setImageName)} />
           </label>
-          {category?.image && (
-            <img src={category.image} alt={category.name} className="w-12 h-12 rounded-full object-cover mt-2 border border-gray-200" />
+          {imageFile && (
+            <img src={imageFile} alt={category.name} className="w-16 h-16 rounded-lg object-cover mt-2 border border-gray-200" />
           )}
         </div>
 
@@ -95,24 +124,36 @@ export default function CategoryEditPage({ category, onNavigate }) {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => setBannerName(e.target.files[0]?.name || 'No file chosen')}
+              onChange={(e) => readFile(e.target.files[0], setBannerFile, setBannerName)}
             />
           </label>
+          {bannerFile && <img src={bannerFile} alt="category banner" className="mt-2 h-20 w-40 rounded-lg border border-gray-200 object-cover" />}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+          <input type="number" min="0" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={inputCls} />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Meta Title (Optional)</label>
-          <input type="text" defaultValue={category?.metaTitle || ''} className={inputCls} />
+          <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className={inputCls} />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description (Optional)</label>
-          <textarea rows={5} defaultValue={category?.metaDescription || ''} className={`${inputCls} resize-y`} />
+          <textarea rows={5} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className={`${inputCls} resize-y`} />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-gray-700">Status</span>
-          <Toggle checked={status} onChange={setStatus} />
+        <div className="flex items-center gap-16 pt-1">
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-700">Status</span>
+            <Toggle checked={status} onChange={setStatus} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-700">Front View</span>
+            <Toggle checked={frontView} onChange={setFrontView} />
+          </div>
         </div>
 
         <div>
