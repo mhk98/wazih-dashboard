@@ -71,6 +71,10 @@ import TagManagerPage from './pages/marketing/TagManagerPage';
 import TagManagerFormPage from './pages/marketing/TagManagerFormPage';
 import FacebookPixelsPage from './pages/marketing/FacebookPixelsPage';
 import FacebookPixelsFormPage from './pages/marketing/FacebookPixelsFormPage';
+import TiktokPixelsPage from './pages/marketing/TiktokPixelsPage';
+import TiktokPixelFormPage from './pages/marketing/TiktokPixelFormPage';
+import GoogleAdsPage from './pages/marketing/GoogleAdsPage';
+import GoogleAdsFormPage from './pages/marketing/GoogleAdsFormPage';
 import CouponCodePage from './pages/marketing/CouponCodePage';
 import CouponCodeFormPage from './pages/marketing/CouponCodeFormPage';
 import SmsMarketingPage from './pages/marketing/SmsMarketingPage';
@@ -149,6 +153,8 @@ function App() {
     { id: 1, pixelsId: '645044913541888', metaAccessToken: '', testEventId: '', status: false },
   ]);
   const [selectedFacebookPixel, setSelectedFacebookPixel] = useState(null);
+  const [selectedTiktokPixel, setSelectedTiktokPixel] = useState(null);
+  const [selectedGoogleAds, setSelectedGoogleAds] = useState(null);
   const [couponCodes, setCouponCodes] = useState([
     { id: 1, code: 'winter11.11', date: '2026-01-20', type: 'Percentage', amount: 11, buyAmount: 800, imageName: '', status: true },
     { id: 2, code: 'offer10', date: '2026-04-30', type: 'Percentage', amount: 12, buyAmount: 1000, imageName: '', status: true },
@@ -965,6 +971,54 @@ function App() {
             pixel={selectedFacebookPixel}
             onSave={saveFacebookPixel}
             onNavigate={(page) => { setSelectedFacebookPixel(null); goMarketing(page); }}
+          />
+        );
+      }
+
+      if (activeMarketingPage === 'tiktok_pixels') {
+        return (
+          <TiktokPixelsPage
+            onCreate={() => { setSelectedTiktokPixel(null); goMarketing('tiktok_pixels_create'); }}
+            onEdit={(pixel) => { setSelectedTiktokPixel(pixel); goMarketing('tiktok_pixels_edit'); }}
+          />
+        );
+      }
+
+      if (activeMarketingPage === 'tiktok_pixels_create') {
+        return <TiktokPixelFormPage onSave={() => setSelectedTiktokPixel(null)} onNavigate={goMarketing} />;
+      }
+
+      if (activeMarketingPage === 'tiktok_pixels_edit' && selectedTiktokPixel) {
+        return (
+          <TiktokPixelFormPage
+            mode="edit"
+            pixel={selectedTiktokPixel}
+            onSave={() => setSelectedTiktokPixel(null)}
+            onNavigate={(page) => { setSelectedTiktokPixel(null); goMarketing(page); }}
+          />
+        );
+      }
+
+      if (activeMarketingPage === 'google_ads') {
+        return (
+          <GoogleAdsPage
+            onCreate={() => { setSelectedGoogleAds(null); goMarketing('google_ads_create'); }}
+            onEdit={(config) => { setSelectedGoogleAds(config); goMarketing('google_ads_edit'); }}
+          />
+        );
+      }
+
+      if (activeMarketingPage === 'google_ads_create') {
+        return <GoogleAdsFormPage onSave={() => setSelectedGoogleAds(null)} onNavigate={goMarketing} />;
+      }
+
+      if (activeMarketingPage === 'google_ads_edit' && selectedGoogleAds) {
+        return (
+          <GoogleAdsFormPage
+            mode="edit"
+            config={selectedGoogleAds}
+            onSave={() => setSelectedGoogleAds(null)}
+            onNavigate={(page) => { setSelectedGoogleAds(null); goMarketing(page); }}
           />
         );
       }

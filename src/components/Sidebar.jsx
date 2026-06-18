@@ -11,8 +11,9 @@ import {
   Bike, Banknote, MessageSquare, ShieldAlert,
   Cpu, Ticket, LayoutGrid, Activity, FileText, Folder, TrendingUp,
 } from 'lucide-react';
-import { siteSettingService } from '../services/websiteService';
+import { orderStatusService, siteSettingService } from '../services/websiteService';
 import { applyDocumentFavicon, getFavicon, getLogo, getSiteName, normalizeSettingData } from '../utils/siteBranding';
+import { normalizeOrderStatuses } from '../utils/orderStatuses';
 
 // ── Orders submenu ──────────────────────────────────────────
 const orderSubMenuItems = [
@@ -26,6 +27,30 @@ const orderSubMenuItems = [
   { key: 'in_courier', label: 'In Courier', icon: Send, color: 'text-indigo-400' },
   { key: 'delivered', label: 'Delivered', icon: CheckSquare, color: 'text-green-400' },
   { key: 'incomplete', label: 'Incomplete', icon: AlertCircle, color: 'text-orange-400' },
+];
+
+const ORDER_STATUS_ICONS = {
+  pending: Clock,
+  packaging: Box,
+  confirmed: CheckCircle,
+  cancelled: XCircle,
+  returned: RotateCcw,
+  on_hold: PauseCircle,
+  in_courier: Send,
+  delivered: CheckSquare,
+  incomplete: AlertCircle,
+};
+
+const ORDER_STATUS_ICON_COLORS = [
+  'text-blue-400',
+  'text-purple-400',
+  'text-teal-400',
+  'text-red-400',
+  'text-amber-400',
+  'text-gray-400',
+  'text-indigo-400',
+  'text-green-400',
+  'text-orange-400',
 ];
 
 // ── Supplier submenu ─────────────────────────────────────────
@@ -77,6 +102,8 @@ const apiSubMenuItems = [
 const marketingSubMenuItems = [
   { key: 'tag_manager',       label: 'Tag Manager',       icon: Tag,        color: 'text-blue-400'   },
   { key: 'facebook_pixels',   label: 'Facebook Pixels',   icon: Cpu,        color: 'text-indigo-400' },
+  { key: 'tiktok_pixels',     label: 'TikTok Pixel',      icon: Activity,   color: 'text-pink-400'   },
+  { key: 'google_ads',        label: 'Google Ads',        icon: TrendingUp, color: 'text-amber-400'  },
   { key: 'coupon_code',       label: 'Coupon Code',       icon: Ticket,     color: 'text-green-400'  },
   { key: 'sms_marketing',     label: 'SMS Marketing',     icon: MessageSquare, color: 'text-purple-400' },
   { key: 'facebook_catalogue',label: 'Facebook Catalogue',icon: LayoutGrid, color: 'text-cyan-400'   },
@@ -132,6 +159,7 @@ const productSubMenuItems = [
 
 export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onOrderStatusChange, orderCounts = {}, activeProductPage, onProductPageChange, activeSupplierPage, onSupplierPageChange, activePurchasePage, onPurchasePageChange, activeLandingPage, onLandingPageChange, activeAdminPage, onAdminPageChange, activeCustomersPage, onCustomersPageChange, activeWebsitePage, onWebsitePageChange, activeApiPage, onApiPageChange, activeMarketingPage, onMarketingPageChange, activeBlogsPage, onBlogsPageChange, activeBannerPage, onBannerPageChange, activeExpensePage, onExpensePageChange, activeReportsPage, onReportsPageChange, siteSettings: externalSiteSettings }) {
   const [siteSettings, setSiteSettings] = useState(externalSiteSettings || null);
+  const [dynamicOrderStatuses, setDynamicOrderStatuses] = useState(() => normalizeOrderStatuses());
   const [ordersOpen, setOrdersOpen] = useState(activePage === 'orders');
   const [productsOpen, setProductsOpen] = useState(activePage === 'products');
   const [supplierOpen, setSupplierOpen] = useState(activePage === 'supplier');
@@ -149,6 +177,12 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
   const currentSettings = externalSiteSettings || siteSettings;
   const currentLogo = getLogo(currentSettings);
   const siteName = getSiteName(currentSettings);
+  const dynamicOrderSubMenuItems = dynamicOrderStatuses.map((status, index) => ({
+    key: status.key,
+    label: status.label,
+    icon: ORDER_STATUS_ICONS[status.key] || CircleDot,
+    color: orderSubMenuItems.find((item) => item.key === status.key)?.color || ORDER_STATUS_ICON_COLORS[index % ORDER_STATUS_ICON_COLORS.length],
+  }));
 
   useEffect(() => {
     let active = true;
@@ -169,6 +203,16 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
       active = false;
       window.removeEventListener('site-settings:update', handleSettingsUpdate);
     };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    orderStatusService.getAll({ limit: 100 })
+      .then((res) => {
+        if (active) setDynamicOrderStatuses(normalizeOrderStatuses(res.data || []));
+      })
+      .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   function handleOrdersClick() {
@@ -305,7 +349,7 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
           badge={orderCounts.all ?? 0}
           onClick={handleOrdersClick}
         >
-          {orderSubMenuItems.map((item) => (
+          {dynamicOrderSubMenuItems.map((item) => (
             <SubItem
               key={item.key}
               icon={item.icon}

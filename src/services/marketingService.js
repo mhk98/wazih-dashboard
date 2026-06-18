@@ -14,6 +14,20 @@ export const facebookPixelService = {
   delete: (id) => apiRequest(`/facebook-pixels/${id}`, { method: "DELETE" }),
 };
 
+export const tiktokPixelService = {
+  getAll: (params = {}) => apiRequest(`/tiktok-pixels${buildQuery(params)}`),
+  create: (data) => apiRequest("/tiktok-pixels/create", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => apiRequest(`/tiktok-pixels/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/tiktok-pixels/${id}`, { method: "DELETE" }),
+};
+
+export const googleAdsService = {
+  getAll: (params = {}) => apiRequest(`/google-ads${buildQuery(params)}`),
+  create: (data) => apiRequest("/google-ads/create", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => apiRequest(`/google-ads/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/google-ads/${id}`, { method: "DELETE" }),
+};
+
 export const couponCodeService = {
   getAll: (params = {}) => apiRequest(`/coupon-codes${buildQuery(params)}`),
   create: (data) => apiRequest("/coupon-codes/create", { method: "POST", body: JSON.stringify(data) }),

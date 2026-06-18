@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Search, Minus, Plus, X, ShoppingCart, LayoutDashboard,
   ShoppingBag, Trash2, ChevronDown, ChevronRight, PlayCircle, Check,
 } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { orderService } from '../services/orderService';
+import { orderStatusService } from '../services/websiteService';
+import { normalizeOrderStatuses } from '../utils/orderStatuses';
 
 const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
@@ -15,18 +17,6 @@ const deliveryAreas = [
   { label: 'সিলেট ১৫০ টাকা', fee: 150 },
   { label: 'রাজশাহী ১৩০ টাকা', fee: 130 },
   { label: 'খুলনা ১৩০ টাকা', fee: 130 },
-];
-
-const orderStatusOptions = [
-  { value: 'pending', label: 'Pending', color: '#f59e0b' },
-  { value: 'confirmed', label: 'Confirmed', color: '#06b6d4' },
-  { value: 'packaging', label: 'Packaging', color: '#8b5cf6' },
-  { value: 'in_courier', label: 'In Courier', color: '#6366f1' },
-  { value: 'delivered', label: 'Delivered', color: '#22c55e' },
-  { value: 'cancelled', label: 'Cancelled', color: '#ef4444' },
-  { value: 'returned', label: 'Returned', color: '#f59e0b' },
-  { value: 'incomplete', label: 'Incomplete', color: '#f97316' },
-  { value: 'on_hold', label: 'On Hold', color: '#6b7280' },
 ];
 
 const categories = [
@@ -45,28 +35,30 @@ const imgGradients = [
 ];
 
 // Build tracking timeline from order status
-function buildTracking(order) {
-  const allSteps = ['pending', 'confirmed', 'packaging', 'in_courier', 'delivered'];
+function buildTracking(order, statuses) {
+  const allSteps = statuses.map((status) => status.key);
   const specialEnd = ['cancelled', 'returned', 'incomplete', 'on_hold'];
+  const statusByKey = Object.fromEntries(statuses.map((status) => [status.key, status]));
 
   if (specialEnd.includes(order.status)) {
     return [
-      { label: 'Pending', date: order.date, done: true, color: '#f59e0b' },
-      { label: orderStatusOptions.find(s => s.value === order.status)?.label, date: order.date, done: true, color: '#ef4444', current: true },
+      { label: statusByKey.pending?.label || 'Pending', date: order.date, done: true, color: statusByKey.pending?.color || '#f59e0b' },
+      { label: statusByKey[order.status]?.label || order.status, date: order.date, done: true, color: statusByKey[order.status]?.color || '#ef4444', current: true },
     ];
   }
 
   const currentIdx = allSteps.indexOf(order.status);
   return allSteps.map((step, i) => ({
-    label: orderStatusOptions.find(s => s.value === step)?.label || step,
-    date: i <= currentIdx ? order.date : null,
-    done: i <= currentIdx,
+    label: statusByKey[step]?.label || step,
+    date: currentIdx >= 0 && i <= currentIdx ? order.date : null,
+    done: currentIdx >= 0 && i <= currentIdx,
     current: i === currentIdx,
-    color: orderStatusOptions.find(s => s.value === step)?.color || '#6b7280',
+    color: statusByKey[step]?.color || '#6b7280',
   }));
 }
 
 export default function EditOrderPage({ order, onNavigate }) {
+  const [orderStatusOptions, setOrderStatusOptions] = useState(() => normalizeOrderStatuses());
   // Pre-fill cart from order (API fields: productName, totalBill, quantity)
   const [cart, setCart] = useState([{
     id: order.Id,
@@ -93,6 +85,16 @@ export default function EditOrderPage({ order, onNavigate }) {
 
   // API products
   const { data: rawProducts, loading: productsLoading } = useProducts({ limit: 500 });
+
+  useEffect(() => {
+    let mounted = true;
+    orderStatusService.getAll({ limit: 100 })
+      .then((res) => {
+        if (mounted) setOrderStatusOptions(normalizeOrderStatuses(res.data || []));
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   // Product panel
   const [search, setSearch] = useState('');
@@ -172,9 +174,9 @@ export default function EditOrderPage({ order, onNavigate }) {
     }
   }
 
-  const tracking = buildTracking({ ...order, status: orderStatus });
+  const tracking = buildTracking({ ...order, status: orderStatus }, orderStatusOptions);
   const invoiceNo = order.orderId || `#${order.Id}`;
-  const currentStatusInfo = orderStatusOptions.find(s => s.value === orderStatus);
+  const currentStatusInfo = orderStatusOptions.find(s => s.key === orderStatus);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-gray-50">
@@ -287,7 +289,7 @@ export default function EditOrderPage({ order, onNavigate }) {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-300 appearance-none pr-8"
                 style={{ color: currentStatusInfo?.color }}>
                 {orderStatusOptions.map(s => (
-                  <option key={s.value} value={s.value} style={{ color: s.color }}>{s.label}</option>
+                  <option key={s.key} value={s.key} style={{ color: s.color }}>{s.label}</option>
                 ))}
               </select>
               <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />

@@ -1,39 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, Plus,
   RefreshCw, Loader2,
 } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 import { orderService } from '../services/orderService';
+import { orderStatusService } from '../services/websiteService';
+import { buildStatusMaps, normalizeOrderStatuses } from '../utils/orderStatuses';
 
 const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
 const PAGE_SIZE = 20;
-
-const STATUS_COLORS = {
-  pending:    'bg-blue-500 text-white',
-  confirmed:  'bg-teal-500 text-white',
-  packaging:  'bg-purple-500 text-white',
-  in_courier: 'bg-indigo-500 text-white',
-  delivered:  'bg-green-500 text-white',
-  cancelled:  'bg-red-500 text-white',
-  returned:   'bg-amber-500 text-white',
-  incomplete: 'bg-orange-500 text-white',
-  on_hold:    'bg-gray-400 text-white',
-};
-
-const STATUS_LABELS = {
-  all: 'All Order',
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  packaging: 'Packaging',
-  in_courier: 'In Courier',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-  returned: 'Returned',
-  incomplete: 'Incomplete',
-  on_hold: 'On Hold',
-};
 
 const COURIER_COLORS = {
   Pathao:    'bg-pink-100 text-pink-700',
@@ -44,6 +21,7 @@ const COURIER_COLORS = {
 };
 
 export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder, onViewOrder, onEditOrder, statusCounts = {}, onCountsRefresh }) {
+  const [orderStatuses, setOrderStatuses] = useState(() => normalizeOrderStatuses());
   const [search, setSearch] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -92,13 +70,18 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
 
   const totalPages = Math.max(1, Math.ceil((meta?.total || 0) / PAGE_SIZE));
   const currentStatus = activeStatus || 'all';
+  const statusMaps = useMemo(() => buildStatusMaps(orderStatuses), [orderStatuses]);
+  const tabStatuses = useMemo(() => ['all', ...statusMaps.statuses.map((s) => s.key)], [statusMaps.statuses]);
 
-  const tabStatuses = ['all', 'pending', 'packaging', 'confirmed', 'cancelled', 'returned', 'on_hold', 'in_courier', 'delivered', 'incomplete'];
-  const tabColors = {
-    all: 'bg-cyan-500', pending: 'bg-blue-500', confirmed: 'bg-teal-500',
-    packaging: 'bg-purple-500', in_courier: 'bg-indigo-500', delivered: 'bg-green-500',
-    cancelled: 'bg-red-500', returned: 'bg-amber-500', incomplete: 'bg-orange-500', on_hold: 'bg-gray-500',
-  };
+  useEffect(() => {
+    let mounted = true;
+    orderStatusService.getAll({ limit: 100 })
+      .then((res) => {
+        if (mounted) setOrderStatuses(normalizeOrderStatuses(res.data || []));
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -109,12 +92,11 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
             key={s}
             onClick={() => handleStatusClick(s)}
             className={`text-xs font-medium px-3 py-1.5 rounded-full transition whitespace-nowrap ${
-              currentStatus === s
-                ? `${tabColors[s]} text-white shadow`
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              currentStatus === s ? 'text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
+            style={currentStatus === s ? { backgroundColor: s === 'all' ? '#06b6d4' : orderStatuses.find((item) => item.key === s)?.color } : undefined}
           >
-            {STATUS_LABELS[s]}
+            {statusMaps.labels[s] || s}
             <span className="ml-1 opacity-80">({statusCounts[s] ?? 0})</span>
           </button>
         ))}
@@ -152,7 +134,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
             className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
             {tabStatuses.map((s) => (
-              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              <option key={s} value={s}>{statusMaps.labels[s] || s}</option>
             ))}
           </select>
 
@@ -191,7 +173,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between" style={{ background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)' }}>
             <span className="text-white font-semibold text-sm">
-              {STATUS_LABELS[currentStatus] || 'All Order'} ({meta?.total ?? 0})
+              {statusMaps.labels[currentStatus] || 'All Order'} ({meta?.total ?? 0})
             </span>
             {loading && <Loader2 size={16} className="text-white animate-spin" />}
           </div>
@@ -241,6 +223,8 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
                       onView={() => onViewOrder && onViewOrder(order)}
                       onEdit={() => onEditOrder && onEditOrder(order)}
                       onDelete={() => handleDelete(order.Id)}
+                      statusLabels={statusMaps.labels}
+                      statusClasses={statusMaps.classes}
                     />
                   ))
                 )}
@@ -280,9 +264,9 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
   );
 }
 
-function OrderRow({ order, index, onView, onEdit, onDelete }) {
-  const statusColor = STATUS_COLORS[order.status] || 'bg-gray-400 text-white';
-  const statusLabel = STATUS_LABELS[order.status] || order.status;
+function OrderRow({ order, index, onView, onEdit, onDelete, statusLabels, statusClasses }) {
+  const statusColor = statusClasses[order.status] || 'bg-gray-400 text-white';
+  const statusLabel = statusLabels[order.status] || order.status;
   const courierColor = COURIER_COLORS[order.courier] || 'bg-gray-100 text-gray-700';
   const dateStr = order.orderDate
     ? new Date(order.orderDate).toLocaleDateString('en-GB')
