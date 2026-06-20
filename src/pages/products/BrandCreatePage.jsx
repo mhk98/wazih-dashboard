@@ -16,9 +16,19 @@ const inputCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-g
 
 import { brandService } from '../../services/productService';
 
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result || '');
+    reader.onerror = () => reject(new Error('Image read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function BrandCreatePage({ onNavigate }) {
   const [name, setName] = useState('');
   const [imageName, setImageName] = useState('No file chosen');
+  const [logo, setLogo] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDesc, setMetaDesc] = useState('');
   const [metaKeyword, setMetaKeyword] = useState('');
@@ -31,7 +41,7 @@ export default function BrandCreatePage({ onNavigate }) {
     setError('');
     setSaving(true);
     try {
-      await brandService.create({ name: name.trim(), status: status ? 'Active' : 'Inactive' });
+      await brandService.create({ name: name.trim(), logo: logo || null, status: status ? 'Active' : 'Inactive' });
       onNavigate && onNavigate('brands');
     } catch (e) {
       setError(e.message);
@@ -68,8 +78,20 @@ export default function BrandCreatePage({ onNavigate }) {
           <label className="flex items-center border border-gray-300 rounded overflow-hidden cursor-pointer w-full">
             <span className="bg-white border-r border-gray-300 px-3 py-2 text-xs text-gray-600 whitespace-nowrap hover:bg-gray-50 transition">Choose file</span>
             <span className="px-3 text-xs text-gray-400 flex-1 truncate">{imageName}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; setImageName(f?.name || 'No file chosen'); }} />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files[0];
+                setImageName(f?.name || 'No file chosen');
+                setLogo(f ? await readImageFile(f) : '');
+              }}
+            />
           </label>
+          {logo && (
+            <img src={logo} alt={name || 'Brand logo'} className="w-16 h-16 rounded-lg object-contain mt-2 border border-gray-200 bg-white p-2" />
+          )}
         </div>
 
         {/* Meta Title */}

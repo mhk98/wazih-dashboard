@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, Plus,
-  RefreshCw, Loader2,
+  RefreshCw, Loader2, Ban,
 } from 'lucide-react';
 import { useOrders } from '../hooks/useOrders';
 import { orderService } from '../services/orderService';
 import { orderStatusService } from '../services/websiteService';
+import { ipBlockService } from '../services/websiteService';
 import { buildStatusMaps, normalizeOrderStatuses } from '../utils/orderStatuses';
 
 const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
@@ -65,6 +66,21 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
       onCountsRefresh?.();
     } catch (err) {
       alert(err.message || 'Delete failed');
+    }
+  }
+
+  async function handleBlockIp(order) {
+    const ip = String(order.ipAddress || '').trim();
+    if (!ip) return;
+    if (!window.confirm(`${ip} IP address block করবেন?`)) return;
+    try {
+      await ipBlockService.create({
+        ip,
+        reason: `Blocked from order ${order.orderId || order.Id}`,
+      });
+      alert(`${ip} blocked successfully.`);
+    } catch (err) {
+      alert(err.message || 'IP block failed');
     }
   }
 
@@ -223,6 +239,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
                       onView={() => onViewOrder && onViewOrder(order)}
                       onEdit={() => onEditOrder && onEditOrder(order)}
                       onDelete={() => handleDelete(order.Id)}
+                      onBlockIp={() => handleBlockIp(order)}
                       statusLabels={statusMaps.labels}
                       statusClasses={statusMaps.classes}
                     />
@@ -264,7 +281,7 @@ export default function OrdersPage({ activeStatus, onStatusChange, onCreateOrder
   );
 }
 
-function OrderRow({ order, index, onView, onEdit, onDelete, statusLabels, statusClasses }) {
+function OrderRow({ order, index, onView, onEdit, onDelete, onBlockIp, statusLabels, statusClasses }) {
   const statusColor = statusClasses[order.status] || 'bg-gray-400 text-white';
   const statusLabel = statusLabels[order.status] || order.status;
   const courierColor = COURIER_COLORS[order.courier] || 'bg-gray-100 text-gray-700';
@@ -292,14 +309,24 @@ function OrderRow({ order, index, onView, onEdit, onDelete, statusLabels, status
 
       <td className="px-3 py-2.5">
         {order.ipAddress ? (
-          <button
-            type="button"
-            onClick={() => navigator.clipboard?.writeText(order.ipAddress)}
-            className="rounded bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200"
-            title="Click to copy IP"
-          >
-            {order.ipAddress}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(order.ipAddress)}
+              className="max-w-[150px] rounded bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 transition hover:bg-slate-200"
+              title={`Click to copy IP: ${order.ipAddress}`}
+            >
+              <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{order.ipAddress}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onBlockIp}
+              className="flex h-7 w-7 items-center justify-center rounded bg-red-100 text-red-600 transition hover:bg-red-200"
+              title={`Block IP: ${order.ipAddress}`}
+            >
+              <Ban size={13} />
+            </button>
+          </div>
         ) : (
           <span className="text-gray-400">—</span>
         )}

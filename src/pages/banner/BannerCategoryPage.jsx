@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Copy, FileText, Pencil, Printer, ThumbsDown, ChevronUp, ChevronDown } from 'lucide-react';
 
-export default function BannerCategoryPage({ categories, onCreate, onEdit }) {
+export default function BannerCategoryPage({ categories, onCreate, onEdit, onToggleStatus }) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ key: 'id', dir: 'asc' });
 
@@ -81,7 +81,14 @@ export default function BannerCategoryPage({ categories, onCreate, onEdit }) {
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <button type="button" title="Disable" className="flex h-7 w-8 items-center justify-center rounded bg-gray-600 text-white transition hover:bg-gray-700">
+                      <button
+                        type="button"
+                        title={category.status ? 'Disable' : 'Enable'}
+                        onClick={() => onToggleStatus?.(category)}
+                        className={`flex h-7 w-8 items-center justify-center rounded text-white transition ${
+                          category.status ? 'bg-gray-600 hover:bg-gray-700' : 'bg-teal-500 hover:bg-teal-600'
+                        }`}
+                      >
                         <ThumbsDown size={13} />
                       </button>
                       <button type="button" title="Edit" onClick={() => onEdit(category)} className="flex h-7 w-8 items-center justify-center rounded bg-indigo-600 text-white transition hover:bg-indigo-700">

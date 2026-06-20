@@ -27,7 +27,7 @@ export default function AdminRolesPage({ onEditRole }) {
   }
 
   async function handleDelete(roleRow) {
-    if (!window.confirm(`"${roleRow.role}" role delete করবেন?`)) return;
+    if (!window.confirm(`"${roleRow.role}" role delete করবেন? এই role assigned থাকলে users গুলো "user" role-এ move হবে।`)) return;
     try {
       await rolePermissionService.delete(roleRow.role);
       refetch();

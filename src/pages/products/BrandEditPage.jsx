@@ -16,9 +16,18 @@ const inputCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-g
 
 import { brandService } from '../../services/productService';
 
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result || '');
+    reader.onerror = () => reject(new Error('Image read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function BrandEditPage({ brand, onNavigate }) {
   const [name, setName] = useState(brand?.name || '');
-  const [imageFile, setImageFile] = useState(null);
+  const [logo, setLogo] = useState(brand?.logo || '');
   const [imageName, setImageName] = useState('No file chosen');
   const [metaTitle, setMetaTitle] = useState(brand?.metaTitle || '');
   const [metaDesc, setMetaDesc] = useState(brand?.metaDescription || '');
@@ -32,7 +41,7 @@ export default function BrandEditPage({ brand, onNavigate }) {
     setError('');
     setSaving(true);
     try {
-      await brandService.update(brand.Id, { name: name.trim(), status: status ? 'Active' : 'Inactive' });
+      await brandService.update(brand.Id, { name: name.trim(), logo: logo || null, status: status ? 'Active' : 'Inactive' });
       onNavigate && onNavigate('brands');
     } catch (e) {
       setError(e.message);
@@ -69,10 +78,21 @@ export default function BrandEditPage({ brand, onNavigate }) {
           <label className="flex items-center border border-gray-300 rounded overflow-hidden cursor-pointer w-full">
             <span className="bg-white border-r border-gray-300 px-3 py-2 text-xs text-gray-600 whitespace-nowrap hover:bg-gray-50 transition">Choose file</span>
             <span className="px-3 text-xs text-gray-400 flex-1 truncate">{imageName}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; if (f) { setImageFile(f); setImageName(f.name); } }} />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files[0];
+                if (f) {
+                  setImageName(f.name);
+                  setLogo(await readImageFile(f));
+                }
+              }}
+            />
           </label>
-          {brand?.logo && !imageFile && (
-            <img src={brand.logo} alt={brand.name} className="w-12 h-12 rounded-lg object-cover mt-2 border border-gray-200" />
+          {logo && (
+            <img src={logo} alt={name || brand?.name} className="w-16 h-16 rounded-lg object-contain mt-2 border border-gray-200 bg-white p-2" />
           )}
         </div>
 

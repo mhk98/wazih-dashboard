@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Copy, FileText, Pencil, Printer, ThumbsDown, ThumbsUp, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
-export default function BannerAdsPage({ banners, onCreate, onEdit, onDelete }) {
+export default function BannerAdsPage({ banners, onCreate, onEdit, onDelete, onToggleStatus }) {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ key: 'id', dir: 'asc' });
 
@@ -93,6 +93,7 @@ export default function BannerAdsPage({ banners, onCreate, onEdit, onDelete }) {
                       <button
                         type="button"
                         title={banner.status ? 'Disable' : 'Enable'}
+                        onClick={() => onToggleStatus?.(banner)}
                         className={`flex h-7 w-8 items-center justify-center rounded text-white transition ${
                           banner.status ? 'bg-gray-600 hover:bg-gray-700' : 'bg-teal-500 hover:bg-teal-600'
                         }`}

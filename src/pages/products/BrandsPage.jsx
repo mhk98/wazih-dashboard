@@ -54,7 +54,7 @@ export default function BrandsPage({ onNavigate, onEditBrand }) {
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-4 py-3">
                     {brand.logo ? (
-                      <img src={brand.logo} alt={brand.name} className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
+                      <img src={brand.logo} alt={brand.name} className="w-10 h-10 rounded-lg object-contain border border-gray-200 bg-white p-1" />
                     ) : (
                       <div className="w-10 h-10 bg-gradient-to-br from-amber-50 to-yellow-100 border border-yellow-200 rounded-lg flex items-center justify-center text-[9px] text-amber-600 font-bold">
                         {brand.name.slice(0, 2).toUpperCase()}

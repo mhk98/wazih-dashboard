@@ -1,5 +1,7 @@
 import { apiRequest, buildQuery } from "../utils/apiClient";
 
+const rolePath = (role) => encodeURIComponent(String(role || "").trim());
+
 export const userService = {
   getAll: (params) => apiRequest(`/user${buildQuery(params)}`),
   getById: (id) => apiRequest(`/user/${id}`),
@@ -13,15 +15,16 @@ export const userService = {
 
 export const rolePermissionService = {
   getAll: () => apiRequest("/role-permissions"),
-  getByRole: (role) => apiRequest(`/role-permissions/${role}`),
+  getAvailable: () => apiRequest("/role-permissions/available"),
+  getByRole: (role) => apiRequest(`/role-permissions/${rolePath(role)}`),
   create: (data) => apiRequest("/role-permissions", {
     method: "POST",
     body: JSON.stringify(data),
   }),
   update: (role, menuPermissions) =>
-    apiRequest(`/role-permissions/${role}`, {
+    apiRequest(`/role-permissions/${rolePath(role)}`, {
       method: "PUT",
       body: JSON.stringify({ menuPermissions }),
     }),
-  delete: (role) => apiRequest(`/role-permissions/${role}`, { method: "DELETE" }),
+  delete: (role) => apiRequest(`/role-permissions/${rolePath(role)}`, { method: "DELETE" }),
 };

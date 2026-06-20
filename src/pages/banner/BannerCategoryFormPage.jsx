@@ -5,6 +5,7 @@ export default function BannerCategoryFormPage({ mode = 'create', category, onSa
     name: category?.name ?? '',
     status: category?.status ?? true,
   });
+  const [saving, setSaving] = useState(false);
 
   const isEdit = mode === 'edit';
 
@@ -12,14 +13,19 @@ export default function BannerCategoryFormPage({ mode = 'create', category, onSa
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    onSave({
-      id: category?.id,
-      name: form.name.trim(),
-      status: form.status,
-    });
-    onNavigate('banner_category');
+    setSaving(true);
+    try {
+      await onSave({
+        id: category?.id,
+        name: form.name.trim(),
+        status: form.status,
+      });
+      onNavigate('banner_category');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -67,8 +73,8 @@ export default function BannerCategoryFormPage({ mode = 'create', category, onSa
             </button>
           </label>
 
-          <button type="submit" className="rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600">
-            Submit
+          <button type="submit" disabled={saving} className="rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
+            {saving ? 'Saving...' : 'Submit'}
           </button>
         </form>
       </div>

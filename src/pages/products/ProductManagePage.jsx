@@ -13,6 +13,11 @@ function parseImages(images) {
   return [];
 }
 
+function imageSrc(file) {
+  if (!file) return '';
+  return /^https?:\/\//i.test(file) ? file : `${BASE_URL}/images/${file}`;
+}
+
 const PAGE_SIZES = [10, 20, 30, 50];
 
 export default function ProductManagePage({ onNavigate }) {
@@ -201,7 +206,7 @@ function ProductRow({ product, checked, onToggle, onDelete, onEdit }) {
             const imgs = parseImages(product.images);
             return imgs[0] ? (
               <img
-                src={`${BASE_URL}/images/${imgs[0]}`}
+                src={imageSrc(imgs[0])}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('span').style.display = 'flex'; }}

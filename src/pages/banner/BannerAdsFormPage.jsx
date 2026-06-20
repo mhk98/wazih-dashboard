@@ -1,14 +1,17 @@
 import { useState } from 'react';
 
 export default function BannerAdsFormPage({ mode = 'create', banner, categories, onSave, onNavigate }) {
+  const initialCategoryId = banner?.categoryId ?? categories.find((item) => item.name === banner?.category)?.id ?? '';
   const [form, setForm] = useState({
     link: banner?.link ?? '',
-    category: banner?.category ?? '',
+    categoryId: initialCategoryId,
     imageName: banner?.imageName ?? '',
+    imageFile: null,
     imageText: banner?.imageText ?? '',
     imageColor: banner?.imageColor ?? 'linear-gradient(135deg, #94a3b8, #475569)',
     status: banner?.status ?? true,
   });
+  const [saving, setSaving] = useState(false);
 
   const isEdit = mode === 'edit';
 
@@ -16,18 +19,26 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    onSave({
-      id: banner?.id,
-      link: form.link.trim(),
-      category: form.category,
-      imageName: form.imageName,
-      imageText: form.imageText,
-      imageColor: form.imageColor,
-      status: form.status,
-    });
-    onNavigate('banner_ads');
+    const selectedCategory = categories.find((category) => String(category.id) === String(form.categoryId));
+    setSaving(true);
+    try {
+      await onSave({
+        id: banner?.id,
+        link: form.link.trim(),
+        categoryId: form.categoryId,
+        category: selectedCategory?.name ?? '',
+        imageName: form.imageName,
+        imageFile: form.imageFile,
+        imageText: form.imageText,
+        imageColor: form.imageColor,
+        status: form.status,
+      });
+      onNavigate('banner_ads');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -60,13 +71,13 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-gray-500">Banner Category</span>
             <select
-              value={form.category}
-              onChange={(e) => setField('category', e.target.value)}
+              value={form.categoryId}
+              onChange={(e) => setField('categoryId', e.target.value)}
               className="h-9 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             >
               <option value="">Choose ...</option>
               {categories.map((category) => (
-                <option key={category.id} value={category.name}>{category.name}</option>
+                <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </select>
           </label>
@@ -78,7 +89,9 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
               accept="image/*"
               required={!isEdit}
               onChange={(e) => {
-                const fileName = e.target.files[0]?.name ?? '';
+                const file = e.target.files[0] ?? null;
+                const fileName = file?.name ?? '';
+                setField('imageFile', file);
                 setField('imageName', fileName);
                 setField('imageText', fileName ? fileName.slice(0, 10) : form.imageText);
               }}
@@ -104,8 +117,8 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
             </button>
           </label>
 
-          <button type="submit" className="rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600">
-            Submit
+          <button type="submit" disabled={saving} className="rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
+            {saving ? 'Saving...' : 'Submit'}
           </button>
         </form>
       </div>

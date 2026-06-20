@@ -15,6 +15,10 @@ import heroImage from "../../assets/hero.png";
 import sslcommerzImage from "../../assets/sslcommerz.png";
 import { landingPageService } from "../../services/landingPageService";
 import { orderService } from "../../services/orderService";
+import {
+  siteSettingService,
+  websitePageService,
+} from "../../services/websiteService";
 
 const SHIPPING_OPTIONS = [
   { id: "inside", label: "Inside Dhaka", charge: 80 },
@@ -50,6 +54,8 @@ export default function LandingPageViewPage({ campaign, onBack }) {
   const [orderError, setOrderError] = useState("");
   const [placedOrder, setPlacedOrder] = useState(null);
   const [showTrackOrder, setShowTrackOrder] = useState(false);
+  const [footerSettings, setFooterSettings] = useState(null);
+  const [footerPages, setFooterPages] = useState([]);
 
   const productName = getProductName(campaign);
   const title =
@@ -80,6 +86,34 @@ export default function LandingPageViewPage({ campaign, onBack }) {
       .catch(() => {
         if (active) setLandingPages([]);
       });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([
+      siteSettingService.get("general").catch(() => null),
+      siteSettingService.get("contact").catch(() => null),
+      siteSettingService.get("social_media").catch(() => null),
+      websitePageService.getAll({ limit: 100 }).catch(() => ({ data: [] })),
+    ]).then(([generalRes, contactRes, socialRes, pageRes]) => {
+      if (!active) return;
+
+      setFooterSettings({
+        general: normalizeSettingData(generalRes?.data?.data),
+        contact: normalizeSettingData(contactRes?.data?.data),
+        social: normalizeSocialMedia(socialRes?.data?.data),
+      });
+      setFooterPages(
+        (pageRes?.data || [])
+          .filter((page) => isActiveStatus(page?.status))
+          .slice(0, 4),
+      );
+    });
+
     return () => {
       active = false;
     };
@@ -172,6 +206,8 @@ export default function LandingPageViewPage({ campaign, onBack }) {
     orderError,
     onPlaceOrder: handlePlaceOrder,
     onTrackOrder: () => setShowTrackOrder(true),
+    footerSettings,
+    footerPages,
   };
 
   if (placedOrder) {
@@ -190,12 +226,21 @@ export default function LandingPageViewPage({ campaign, onBack }) {
           setPlacedOrder(null);
           setShowTrackOrder(true);
         }}
+        footerSettings={footerSettings}
+        footerPages={footerPages}
       />
     );
   }
 
   if (showTrackOrder) {
-    return <TrackOrderPage phoneNumber={phone} onBack={() => setShowTrackOrder(false)} />;
+    return (
+      <TrackOrderPage
+        phoneNumber={phone}
+        onBack={() => setShowTrackOrder(false)}
+        footerSettings={footerSettings}
+        footerPages={footerPages}
+      />
+    );
   }
 
   if (template === "Template Design 2") {
@@ -537,7 +582,11 @@ export default function LandingPageViewPage({ campaign, onBack }) {
           ) : null}
         </main>
 
-        <Footer phone={phone} />
+        <Footer
+          phone={phone}
+          settings={footerSettings}
+          pages={footerPages}
+        />
       </div>
     </div>
   );
@@ -578,6 +627,8 @@ function OrderSuccessPage({
   phoneNumber,
   onContinue,
   onTrack,
+  footerSettings,
+  footerPages,
 }) {
   const orderNumber = order.orderId || `#${order.Id || "Pending"}`;
   const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
@@ -718,7 +769,11 @@ function OrderSuccessPage({
           </button>
         </div>
       </main>
-      <Footer phone={phoneNumber} />
+      <Footer
+        phone={phoneNumber}
+        settings={footerSettings}
+        pages={footerPages}
+      />
     </div>
   );
 }
@@ -750,7 +805,7 @@ function Step({ number, title, text }) {
   );
 }
 
-function TrackOrderPage({ phoneNumber, onBack }) {
+function TrackOrderPage({ phoneNumber, onBack, footerSettings, footerPages }) {
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -871,7 +926,11 @@ function TrackOrderPage({ phoneNumber, onBack }) {
           ) : null}
         </div>
       </main>
-      <Footer phone={phoneNumber} />
+      <Footer
+        phone={phoneNumber}
+        settings={footerSettings}
+        pages={footerPages}
+      />
     </div>
   );
 }
@@ -980,14 +1039,21 @@ function TemplateDesign2({ data }) {
           <DescriptionBlock title={descriptionTitle} text={shortDescription} />
         </section>
 
-        <WinnerGrid reviewImages={reviewImages} title="Campaign Winners" />
+        <WinnerGrid
+          reviewImages={reviewImages}
+          title="Campaign Winners"
+        />
         <OrderFormBlock data={data} />
         <RelatedProductsSection
           relatedProducts={relatedProducts}
           bannerImage={bannerImage}
         />
       </main>
-      <Footer phone={phone} />
+      <Footer
+        phone={phone}
+        settings={data.footerSettings}
+        pages={data.footerPages}
+      />
     </div>
   );
 }
@@ -1101,9 +1167,17 @@ function TemplateDesign3({ data }) {
           />
         </section>
 
-        <WinnerGrid reviewImages={reviewImages} title="Customer Proof" dark />
+        <WinnerGrid
+          reviewImages={reviewImages}
+          title="Customer Proof"
+          dark
+        />
       </main>
-      <Footer phone={phone} />
+      <Footer
+        phone={phone}
+        settings={data.footerSettings}
+        pages={data.footerPages}
+      />
     </div>
   );
 }
@@ -1421,8 +1495,7 @@ function SocialIcon({
   className = "h-5 w-5 text-amber-300 hover:bg-white/10 hover:text-amber-100",
 }) {
   return (
-    <button
-      type="button"
+    <span
       aria-label={label}
       title={label}
       className={`inline-flex items-center justify-center rounded-full transition ${className}`}
@@ -1470,7 +1543,7 @@ function SocialIcon({
           <path d="M17.4 6.1a5.7 5.7 0 0 0 3.4 1.1v3.5a9.2 9.2 0 0 1-3.5-.7v5.3a5.9 5.9 0 1 1-5.9-5.9c.4 0 .8 0 1.2.1v3.7a2.3 2.3 0 1 0 1.1 2V2.8h3.7v3.3Z" />
         </svg>
       ) : null}
-    </button>
+    </span>
   );
 }
 
@@ -1673,61 +1746,117 @@ function ProductCard({ item, image }) {
   );
 }
 
-function Footer({ phone }) {
+function Footer({ phone, settings, pages = [] }) {
+  const general = settings?.general || {};
+  const contact = settings?.contact || {};
+  const socialLinks = settings?.social?.length
+    ? settings.social
+    : [
+        { key: "facebook", label: "facebook", url: "" },
+        { key: "youtube", label: "youtube", url: "" },
+        { key: "tiktok", label: "tiktok", url: "" },
+        { key: "instagram", label: "instagram", url: "" },
+      ];
+  const siteName =
+    general.companyName ||
+    general.websiteName ||
+    general.siteName ||
+    general.name ||
+    "ওয়াজিহ";
+  const logo =
+    general.logo ||
+    general.logoUrl ||
+    general.logoFile ||
+    general.darkLogo ||
+    general.whiteLogo ||
+    "";
+  const supportPhone =
+    contact.hotlineNumber ||
+    contact.phoneNumber ||
+    contact.phone ||
+    contact.whatsappNumber ||
+    phone;
+  const address =
+    contact.address ||
+    general.address ||
+    "500/3 Khilgaon Niribili Society, Dhaka Bangladesh";
+  const description =
+    general.footerText ||
+    general.shortDescription ||
+    general.metaDescription ||
+    "Corporate and promotional gift item supplier in Bangladesh";
+  const quickLinks = [
+    {
+      label: "Customer Support",
+      href: supportPhone ? `tel:${String(supportPhone).replace(/\s+/g, "")}` : "#",
+    },
+    { label: "All Products", href: "#products" },
+    { label: "Categories", href: "#categories" },
+    { label: "Track My Order", href: "#track-order" },
+  ];
+  const importantLinks = pages.length
+    ? pages.map((page) => ({
+        label: page.title || page.name || page.pageTitle || page.slug,
+        href: page.slug ? `/page/${page.slug}` : "#",
+      }))
+    : [{ label: "Refund Policy", href: "#" }];
+
   return (
     <footer className="bg-[#20211f] text-slate-300">
       <div className="mx-auto max-w-[1340px] px-4 py-12">
         <div className="grid gap-10 md:grid-cols-[1.65fr_0.75fr_0.75fr_1fr]">
           <div>
             <div className="flex items-center gap-3 text-xl font-black text-white">
-              <span className="flex h-12 w-12 items-center justify-center rounded-sm bg-white text-sm text-amber-500 shadow-sm">
-                W
-              </span>
-              ওয়াজিহ
+              {logo ? (
+                <img
+                  src={logo}
+                  alt={siteName}
+                  className="h-12 w-12 rounded-sm bg-white object-contain p-1 shadow-sm"
+                />
+              ) : (
+                <span className="flex h-12 w-12 items-center justify-center rounded-sm bg-white text-sm text-amber-500 shadow-sm">
+                  {siteName.slice(0, 1)}
+                </span>
+              )}
+              {siteName}
             </div>
             <p className="mt-7 text-md font-medium text-slate-400">
               Customer Supports:
             </p>
             <p className="mt-3 text-md font-black tracking-wide text-white">
-              {phone}
+              {supportPhone}
             </p>
             <p className="mt-7 max-w-xl text-base font-medium leading-7 text-slate-400">
-              Corporate and promotional gift item supplier in Bangladesh
+              {description}
             </p>
             <p className="mt-3 text-base font-medium text-slate-400">
-              500/3 Khilgaon Niribili Society, Dhaka Bangladesh
+              {address}
             </p>
           </div>
 
-          <FooterLinks
-            title="Quick Links"
-            links={[
-              "Customer Support",
-              "All Products",
-              "Categories",
-              "Track My Order",
-            ]}
-          />
+          <FooterLinks title="Quick Links" links={quickLinks} />
 
           <div>
             <h3 className="text-xl font-black text-white">Follow Us</h3>
             <ul className="mt-5 space-y-3 text-base font-semibold text-slate-500">
-              {[
-                ["facebook", "facebook"],
-                ["youtube", "youtube"],
-                ["tiktok", "tiktok"],
-                ["instagram", "instagram"],
-              ].map(([type, label]) => (
+              {socialLinks.map((item) => (
                 <li
-                  key={label}
+                  key={`${item.key}-${item.label}`}
                   className="flex text-md font-medium text-slate-400 items-center gap-3"
                 >
-                  <SocialIcon
-                    type={type}
-                    label={label}
-                    className="h-5 w-5 text-md font-medium text-slate-400 hover:text-white"
-                  />
-                  <span>{label}</span>
+                  <a
+                    href={item.url || "#"}
+                    target={item.url ? "_blank" : undefined}
+                    rel={item.url ? "noreferrer" : undefined}
+                    className="inline-flex items-center gap-3 transition hover:text-white"
+                  >
+                    <SocialIcon
+                      type={item.key}
+                      label={item.label}
+                      className="h-5 w-5 text-md font-medium text-slate-400 hover:text-white"
+                    />
+                    <span>{item.label}</span>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -1735,23 +1864,28 @@ function Footer({ phone }) {
 
           <div>
             <h3 className="text-xl font-black text-white">Important Links</h3>
-            <button
-              type="button"
-              className="mt-5 flex w-full max-w-xs items-center justify-between rounded-lg bg-[#343538] px-4 py-4 text-sm font-black text-slate-400 transition hover:bg-[#3d3e42] hover:text-white"
-            >
-              <span className="inline-flex items-center gap-3">
-                <span className="h-2.5 w-2.5 text-md font-medium rounded-full bg-slate-400" />
-                Refund Policy
-              </span>
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-4 w-4 fill-none stroke-current stroke-2"
-              >
-                <path d="M7 17 17 7" />
-                <path d="M9 7h8v8" />
-              </svg>
-            </button>
+            <div className="mt-5 space-y-3">
+              {importantLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="flex w-full max-w-xs items-center justify-between rounded-lg bg-[#343538] px-4 py-4 text-sm font-black text-slate-400 transition hover:bg-[#3d3e42] hover:text-white"
+                >
+                  <span className="inline-flex items-center gap-3">
+                    <span className="h-2.5 w-2.5 text-md font-medium rounded-full bg-slate-400" />
+                    {link.label}
+                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-4 w-4 fill-none stroke-current stroke-2"
+                  >
+                    <path d="M7 17 17 7" />
+                    <path d="M9 7h8v8" />
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1779,9 +1913,17 @@ function FooterLinks({ title, links }) {
     <div>
       <h3 className="text-xl font-black text-white">{title}</h3>
       <ul className="mt-5 space-y-3 text-md font-medium text-slate-400">
-        {links.map((link) => (
-          <li key={link}>{link}</li>
-        ))}
+        {links.map((link) => {
+          const item =
+            typeof link === "string" ? { label: link, href: "#" } : link;
+          return (
+            <li key={item.label}>
+              <a href={item.href || "#"} className="transition hover:text-white">
+                {item.label}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -1802,6 +1944,39 @@ function normalizeTemplate(value) {
   if (template === "Template Design 2" || template === "Template Design 3")
     return template;
   return "Template Design 1";
+}
+
+function normalizeSettingData(value) {
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeSocialMedia(value) {
+  const data = normalizeSettingData(value);
+  const list = Array.isArray(data) ? data : Object.values(data || {});
+
+  return list
+    .filter((item) => item && typeof item === "object")
+    .filter((item) => isActiveStatus(item.active))
+    .map((item) => ({
+      key: String(item.key || item.type || item.label || "").toLowerCase(),
+      label: item.label || item.key || "Social",
+      url: item.url || item.link || "",
+    }))
+    .filter((item) => item.key);
+}
+
+function isActiveStatus(value) {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "boolean") return value;
+  const normalized = String(value).trim().toLowerCase();
+  return !["0", "false", "inactive", "disabled"].includes(normalized);
 }
 
 function toNumber(value, fallback) {

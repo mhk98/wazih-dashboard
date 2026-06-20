@@ -46,6 +46,27 @@ function FormField({ label, required, children }) {
 
 const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white';
 const selectCls = `${inputCls} appearance-none`;
+const emptyVariation = { purchasePrice: '', oldPrice: '', discountPercent: '', newPrice: '', stock: '' };
+
+function clampDiscount(value) {
+  const num = Number(value);
+  if (Number.isNaN(num)) return '';
+  return Math.max(0, Math.min(100, num));
+}
+
+function calcDiscountPercent(oldPrice, newPrice) {
+  const oldNum = Number(oldPrice);
+  const newNum = Number(newPrice);
+  if (!oldNum || !newNum || oldNum <= newNum) return '';
+  return Number((((oldNum - newNum) / oldNum) * 100).toFixed(2));
+}
+
+function calcDiscountedPrice(oldPrice, discountPercent) {
+  const oldNum = Number(oldPrice);
+  const discountNum = Number(discountPercent);
+  if (!oldNum || Number.isNaN(discountNum)) return '';
+  return Math.max(0, Math.round(oldNum - ((oldNum * discountNum) / 100)));
+}
 
 export default function ProductEditPage({ product, onNavigate }) {
   const fileInputRef = useRef(null);
@@ -95,10 +116,11 @@ export default function ProductEditPage({ product, onNavigate }) {
         id: v.Id,
         purchasePrice: v.purchasePrice || '',
         oldPrice:      v.oldPrice      || '',
+        discountPercent: calcDiscountPercent(v.oldPrice, v.newPrice),
         newPrice:      v.newPrice      || '',
         stock:         v.stock         || 0,
       }))
-    : [{ purchasePrice: '', oldPrice: '', newPrice: '', stock: '' }];
+    : [emptyVariation];
   const [variations, setVariations] = useState(initVariations);
 
   // ----- dropdowns -----
@@ -174,8 +196,25 @@ export default function ProductEditPage({ product, onNavigate }) {
   }
 
   // variations
-  function addVariation() { setVariations(prev => [...prev, { purchasePrice: '', oldPrice: '', newPrice: '', stock: '' }]); }
-  function updateVariation(idx, field, val) { setVariations(prev => prev.map((v, i) => i === idx ? { ...v, [field]: val } : v)); }
+  function addVariation() { setVariations(prev => [...prev, emptyVariation]); }
+  function updateVariation(idx, field, val) {
+    setVariations(prev => prev.map((v, i) => {
+      if (i !== idx) return v;
+      const next = { ...v, [field]: val };
+      if (field === 'discountPercent') {
+        const discount = clampDiscount(val);
+        next.discountPercent = discount;
+        next.newPrice = calcDiscountedPrice(next.oldPrice, discount);
+      }
+      if (field === 'oldPrice' && next.discountPercent !== '') {
+        next.newPrice = calcDiscountedPrice(val, next.discountPercent);
+      }
+      if (field === 'newPrice') {
+        next.discountPercent = calcDiscountPercent(next.oldPrice, val);
+      }
+      return next;
+    }));
+  }
   function removeVariation(idx) { setVariations(prev => prev.filter((_, i) => i !== idx)); }
 
   async function handleSubmit() {
@@ -383,6 +422,7 @@ export default function ProductEditPage({ product, onNavigate }) {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Purchase Price</th>
                   <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Old Price</th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Discount %</th>
                   <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">New Price</th>
                   <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Stock</th>
                   <th className="px-4 py-2.5 text-center w-10"></th>
@@ -393,6 +433,7 @@ export default function ProductEditPage({ product, onNavigate }) {
                   <tr key={i} className="border-b border-gray-100 last:border-0">
                     <td className="px-3 py-2"><input type="number" value={v.purchasePrice} onChange={e => updateVariation(i, 'purchasePrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
                     <td className="px-3 py-2"><input type="number" value={v.oldPrice} onChange={e => updateVariation(i, 'oldPrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
+                    <td className="px-3 py-2"><input type="number" min="0" max="100" step="0.01" value={v.discountPercent} onChange={e => updateVariation(i, 'discountPercent', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" placeholder="%" /></td>
                     <td className="px-3 py-2"><input type="number" value={v.newPrice} onChange={e => updateVariation(i, 'newPrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
                     <td className="px-3 py-2"><input type="number" value={v.stock} onChange={e => updateVariation(i, 'stock', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
                     <td className="px-3 py-2 text-center">

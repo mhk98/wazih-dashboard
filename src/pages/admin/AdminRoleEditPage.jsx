@@ -1,48 +1,73 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { rolePermissionService } from '../../services/adminService';
 
-const ALL_PERMISSIONS = [
-  'banner-category-create', 'banner-category-delete', 'banner-category-edit', 'banner-category-list',
-  'banner-create', 'banner-delete', 'banner-edit', 'banner-list',
-  'brand-create', 'brand-delete', 'brand-edit', 'brand-list',
-  'campaign-create', 'campaign-delete', 'campaign-edit', 'campaign-list',
-  'category-create', 'category-delete', 'category-edit', 'category-list',
-  'childcategory-create', 'childcategory-delete', 'childcategory-edit', 'childcategory-list',
-  'color-create', 'color-delete', 'color-edit', 'color-list',
-  'couponcode-create', 'couponcode-delete', 'couponcode-edit', 'couponcode-list',
-  'customer-manage-create', 'customer-manage-delete', 'customer-manage-edit', 'customer-manage-list',
-  'dashboard-off',
-  'expense-create', 'expense-delete', 'expense-edit', 'expense-list',
-  'expensecategory-create', 'expensecategory-delete', 'expensecategory-edit', 'expensecategory-list',
-  'google-tag-create', 'google-tag-delete', 'google-tag-edit', 'google-tag-list',
-  'order-create', 'order-delete', 'order-edit', 'order-invoice', 'order-list', 'order-process',
-  'order-status-create', 'order-status-delete', 'order-status-edit', 'order-status-list',
-  'page-create', 'page-delete', 'page-edit', 'page-list',
-  'permission-create', 'permission-delete', 'permission-edit', 'permission-list',
-  'pixel-create', 'pixel-delete', 'pixel-edit', 'pixel-list',
-  'product-create', 'product-delete', 'product-edit', 'product-list',
-  'purchase-create', 'purchase-delete', 'purchase-edit', 'purchase-list',
-  'review-create', 'review-delete', 'review-edit', 'review-list',
-  'role-create', 'role-delete', 'role-edit', 'role-list',
-  'setting-create', 'setting-delete', 'setting-edit', 'setting-list',
-  'shipping-create', 'shipping-delete', 'shipping-edit', 'shipping-list',
-  'social-create', 'social-delete', 'social-edit', 'social-list',
-  'subcategory-create', 'subcategory-delete', 'subcategory-edit', 'subcategory-list',
-  'supplier-create', 'supplier-delete', 'supplier-edit', 'supplier-list',
-  'user-create', 'user-delete', 'user-edit', 'user-list',
-  'user_management',
+const FALLBACK_PERMISSIONS = [
+  'dashboard',
+  'orders',
+  'products',
+  'supplier',
+  'purchase',
+  'landing_page',
+  'admin_user',
+  'admin_roles',
+  'admin_permissions',
+  'customers',
+  'ip_block',
+  'website_setting',
+  'api_integration',
+  'marketing_tools',
+  'blogs',
+  'banner_ads',
+  'expense',
+  'reports',
+  'cache_clear',
 ];
 
 export default function AdminRoleEditPage({ role, onSave, onNavigate }) {
   const [checked, setChecked] = useState(new Set(role?.menuPermissions ?? []));
+  const [availablePermissions, setAvailablePermissions] = useState(FALLBACK_PERMISSIONS);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const allChecked = checked.size === ALL_PERMISSIONS.length;
-  const someChecked = checked.size > 0 && !allChecked;
+  useEffect(() => {
+    let alive = true;
+
+    async function loadPermissions() {
+      setLoadingPermissions(true);
+      try {
+        const res = await rolePermissionService.getAvailable();
+        const permissions = Array.isArray(res?.data) ? res.data : [];
+        if (alive && permissions.length) {
+          setAvailablePermissions(permissions);
+        }
+      } catch (err) {
+        if (alive) {
+          setError(err.message || 'Permission list load failed');
+        }
+      } finally {
+        if (alive) setLoadingPermissions(false);
+      }
+    }
+
+    loadPermissions();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const availableSet = useMemo(() => new Set(availablePermissions), [availablePermissions]);
+  const selectedAvailableCount = availablePermissions.filter((perm) => checked.has(perm)).length;
+  const allChecked = availablePermissions.length > 0 && selectedAvailableCount === availablePermissions.length;
+  const someChecked = selectedAvailableCount > 0 && !allChecked;
 
   function toggleAll() {
-    setChecked(allChecked ? new Set() : new Set(ALL_PERMISSIONS));
+    setChecked((prev) => {
+      if (!allChecked) return new Set(availablePermissions);
+      const next = new Set(prev);
+      availablePermissions.forEach((perm) => next.delete(perm));
+      return next;
+    });
   }
 
   function toggle(perm) {
@@ -59,7 +84,8 @@ export default function AdminRoleEditPage({ role, onSave, onNavigate }) {
     setSaving(true);
     setError('');
     try {
-      await rolePermissionService.update(role.role, [...checked]);
+      const menuPermissions = [...checked].filter((perm) => availableSet.has(perm));
+      await rolePermissionService.update(role.role, menuPermissions);
       onSave && onSave();
       onNavigate && onNavigate('admin_roles');
     } catch (err) {
@@ -70,7 +96,7 @@ export default function AdminRoleEditPage({ role, onSave, onNavigate }) {
   }
 
   const cols = [[], [], []];
-  ALL_PERMISSIONS.forEach((p, i) => cols[i % 3].push(p));
+  availablePermissions.forEach((p, i) => cols[i % 3].push(p));
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -97,10 +123,15 @@ export default function AdminRoleEditPage({ role, onSave, onNavigate }) {
             onChange={toggleAll}
             className="w-4 h-4 rounded accent-blue-600"
           />
-          <span className="text-sm font-semibold text-blue-600">Check All ({checked.size} / {ALL_PERMISSIONS.length})</span>
+          <span className="text-sm font-semibold text-blue-600">
+            Check All ({selectedAvailableCount} / {availablePermissions.length})
+          </span>
         </label>
 
         <div className="bg-white rounded-xl shadow p-4">
+          {loadingPermissions && (
+            <div className="pb-4 text-xs font-semibold text-gray-400">Loading permissions...</div>
+          )}
           <div className="grid grid-cols-3 gap-x-6">
             {cols.map((col, ci) => (
               <div key={ci} className="space-y-0">

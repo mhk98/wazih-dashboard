@@ -86,6 +86,7 @@ import BannerCategoryPage from './pages/banner/BannerCategoryPage';
 import BannerCategoryFormPage from './pages/banner/BannerCategoryFormPage';
 import BannerAdsPage from './pages/banner/BannerAdsPage';
 import BannerAdsFormPage from './pages/banner/BannerAdsFormPage';
+import { bannerAdsService, bannerCategoryService } from './services/bannerService';
 import ExpenseCategoryPage from './pages/expense/ExpenseCategoryPage';
 import ExpenseCategoryFormPage from './pages/expense/ExpenseCategoryFormPage';
 import ExpensePage from './pages/expense/ExpensePage';
@@ -103,29 +104,241 @@ function getDirectLandingPageId() {
   return match?.[1] || '';
 }
 
+const DASHBOARD_NAV_STORAGE_KEY = 'wazih-dashboard:navigation';
+
+const DEFAULT_NAVIGATION = {
+  activePage: 'dashboard',
+  activeOrderStatus: 'all',
+  activeProductPage: 'product_manage',
+  activeSupplierPage: 'supplier_list',
+  activePurchasePage: 'purchase_list',
+  activeLandingPage: 'landing_create',
+  activeAdminPage: 'admin_user',
+  activeCustomersPage: 'customer_list',
+  activeWebsitePage: 'general_setting',
+  activeApiPage: 'courier_api',
+  activeMarketingPage: 'tag_manager',
+  activeBlogsPage: 'blog',
+  activeBannerPage: 'banner_category',
+  activeExpensePage: 'expense_categories',
+  activeReportsPage: 'stock_report',
+};
+
+const PERSISTABLE_PAGES = new Set([
+  'dashboard',
+  'orders',
+  'create_order',
+  'products',
+  'create_product',
+  'create_category',
+  'create_subcategory',
+  'create_childcategory',
+  'create_brand',
+  'create_color',
+  'create_attribute',
+  'create_review',
+  'supplier',
+  'purchase',
+  'landing',
+  'admin',
+  'customers',
+  'website',
+  'api',
+  'marketing',
+  'blogs',
+  'banner',
+  'expense',
+  'reports',
+]);
+
+const TRANSIENT_PAGE_FALLBACKS = {
+  invoice: { activePage: 'orders', activeOrderStatus: 'all' },
+  edit_order: { activePage: 'orders', activeOrderStatus: 'all' },
+  edit_product: { activePage: 'products', activeProductPage: 'product_manage' },
+  edit_category: { activePage: 'products', activeProductPage: 'categories' },
+  edit_subcategory: { activePage: 'products', activeProductPage: 'subcategories' },
+  edit_childcategory: { activePage: 'products', activeProductPage: 'childcategories' },
+  edit_brand: { activePage: 'products', activeProductPage: 'brands' },
+  edit_color: { activePage: 'products', activeProductPage: 'colors' },
+  edit_attribute: { activePage: 'products', activeProductPage: 'attribute' },
+  edit_review: { activePage: 'products', activeProductPage: 'reviews' },
+};
+
+const TRANSIENT_SUBPAGE_FALLBACKS = {
+  activeSupplierPage: {
+    supplier_edit: 'supplier_list',
+    payment_edit: 'payment_list',
+  },
+  activePurchasePage: {
+    purchase_edit: 'purchase_list',
+  },
+  activeLandingPage: {
+    landing_edit: 'landing_manage',
+    landing_view: 'landing_manage',
+  },
+  activeAdminPage: {
+    admin_user_edit: 'admin_user',
+    admin_role_edit: 'admin_roles',
+  },
+  activeCustomersPage: {
+    customer_edit: 'customer_list',
+    customer_view: 'customer_list',
+    customer_login_as: 'customer_list',
+  },
+  activeMarketingPage: {
+    tag_manager_edit: 'tag_manager',
+    facebook_pixels_edit: 'facebook_pixels',
+    tiktok_pixels_edit: 'tiktok_pixels',
+    google_ads_edit: 'google_ads',
+    coupon_code_edit: 'coupon_code',
+  },
+  activeBlogsPage: {
+    blog_edit: 'blog',
+  },
+  activeBannerPage: {
+    banner_category_edit: 'banner_category',
+    banner_ads_edit: 'banner_ads',
+  },
+  activeExpensePage: {
+    expense_category_edit: 'expense_categories',
+    expense_edit: 'expense',
+  },
+};
+
+function normalizeNavigationState(state = {}) {
+  const fallback = TRANSIENT_PAGE_FALLBACKS[state.activePage] || {};
+  const next = { ...DEFAULT_NAVIGATION, ...state, ...fallback };
+  if (!PERSISTABLE_PAGES.has(next.activePage)) {
+    next.activePage = DEFAULT_NAVIGATION.activePage;
+  }
+  Object.entries(TRANSIENT_SUBPAGE_FALLBACKS).forEach(([key, values]) => {
+    if (values[next[key]]) next[key] = values[next[key]];
+  });
+  return next;
+}
+
+function getHashNavigationState() {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return null;
+  const params = new URLSearchParams(hash);
+  if (!params.has('page')) return null;
+
+  return normalizeNavigationState({
+    activePage: params.get('page') || DEFAULT_NAVIGATION.activePage,
+    activeOrderStatus: params.get('orderStatus') || DEFAULT_NAVIGATION.activeOrderStatus,
+    activeProductPage: params.get('productPage') || DEFAULT_NAVIGATION.activeProductPage,
+    activeSupplierPage: params.get('supplierPage') || DEFAULT_NAVIGATION.activeSupplierPage,
+    activePurchasePage: params.get('purchasePage') || DEFAULT_NAVIGATION.activePurchasePage,
+    activeLandingPage: params.get('landingPage') || DEFAULT_NAVIGATION.activeLandingPage,
+    activeAdminPage: params.get('adminPage') || DEFAULT_NAVIGATION.activeAdminPage,
+    activeCustomersPage: params.get('customersPage') || DEFAULT_NAVIGATION.activeCustomersPage,
+    activeWebsitePage: params.get('websitePage') || DEFAULT_NAVIGATION.activeWebsitePage,
+    activeApiPage: params.get('apiPage') || DEFAULT_NAVIGATION.activeApiPage,
+    activeMarketingPage: params.get('marketingPage') || DEFAULT_NAVIGATION.activeMarketingPage,
+    activeBlogsPage: params.get('blogsPage') || DEFAULT_NAVIGATION.activeBlogsPage,
+    activeBannerPage: params.get('bannerPage') || DEFAULT_NAVIGATION.activeBannerPage,
+    activeExpensePage: params.get('expensePage') || DEFAULT_NAVIGATION.activeExpensePage,
+    activeReportsPage: params.get('reportsPage') || DEFAULT_NAVIGATION.activeReportsPage,
+  });
+}
+
+function getStoredNavigationState() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DASHBOARD_NAV_STORAGE_KEY) || 'null');
+    return parsed ? normalizeNavigationState(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getInitialNavigationState() {
+  if (getDirectLandingPageId()) return DEFAULT_NAVIGATION;
+  return getHashNavigationState() || getStoredNavigationState() || DEFAULT_NAVIGATION;
+}
+
+function writeNavigationState(state) {
+  if (typeof window === 'undefined' || getDirectLandingPageId()) return;
+  const normalized = normalizeNavigationState(state);
+  try {
+    localStorage.setItem(DASHBOARD_NAV_STORAGE_KEY, JSON.stringify(normalized));
+  } catch {
+    // Ignore storage failures; the URL hash still preserves the current section.
+  }
+
+  const params = new URLSearchParams({
+    page: normalized.activePage,
+    orderStatus: normalized.activeOrderStatus,
+    productPage: normalized.activeProductPage,
+    supplierPage: normalized.activeSupplierPage,
+    purchasePage: normalized.activePurchasePage,
+    landingPage: normalized.activeLandingPage,
+    adminPage: normalized.activeAdminPage,
+    customersPage: normalized.activeCustomersPage,
+    websitePage: normalized.activeWebsitePage,
+    apiPage: normalized.activeApiPage,
+    marketingPage: normalized.activeMarketingPage,
+    blogsPage: normalized.activeBlogsPage,
+    bannerPage: normalized.activeBannerPage,
+    expensePage: normalized.activeExpensePage,
+    reportsPage: normalized.activeReportsPage,
+  });
+
+  const nextUrl = `${window.location.pathname}${window.location.search}#${params.toString()}`;
+  if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
+    window.history.replaceState(null, '', nextUrl);
+  }
+}
+
+function normalizeBannerCategory(item) {
+  return {
+    id: item.Id ?? item.id,
+    name: item.name ?? '',
+    status: item.status === true || item.status === 'Active',
+    sortOrder: item.sortOrder ?? null,
+  };
+}
+
+function normalizeBanner(item) {
+  const category = item.category?.name || item.categoryName || item.category || '';
+  return {
+    id: item.Id ?? item.id,
+    link: item.linkUrl ?? item.link ?? '',
+    categoryId: item.categoryId ?? item.category?.Id ?? '',
+    category,
+    imageName: item.file ?? item.imageName ?? '',
+    imageText: item.alt ?? item.imageText ?? category,
+    imageColor: item.imageColor ?? 'linear-gradient(135deg, #94a3b8, #475569)',
+    status: item.status === true || item.status === 'Active',
+    sortOrder: item.sortOrder ?? null,
+  };
+}
+
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
   const directLandingPageId = getDirectLandingPageId();
+  const initialNavigation = getInitialNavigationState();
 
   // All hooks must be called unconditionally (Rules of Hooks).
   // They silently return empty data when there is no auth token.
   const { counts: orderCounts, refetch: refetchOrderCounts } = useOrderStatusCounts(isAuthenticated);
-  const [activePage, setActivePage] = useState('dashboard');
-  const [activeOrderStatus, setActiveOrderStatus] = useState('all');
-  const [activeProductPage, setActiveProductPage] = useState('product_manage');
-  const [activeSupplierPage, setActiveSupplierPage] = useState('supplier_list');
-  const [activePurchasePage, setActivePurchasePage] = useState('purchase_list');
+  const [activePage, setActivePage] = useState(initialNavigation.activePage);
+  const [activeOrderStatus, setActiveOrderStatus] = useState(initialNavigation.activeOrderStatus);
+  const [activeProductPage, setActiveProductPage] = useState(initialNavigation.activeProductPage);
+  const [activeSupplierPage, setActiveSupplierPage] = useState(initialNavigation.activeSupplierPage);
+  const [activePurchasePage, setActivePurchasePage] = useState(initialNavigation.activePurchasePage);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
-  const [activeLandingPage, setActiveLandingPage] = useState('landing_create');
-  const [activeAdminPage, setActiveAdminPage] = useState('admin_user');
-  const [activeCustomersPage, setActiveCustomersPage] = useState('customer_list');
-  const [activeWebsitePage, setActiveWebsitePage] = useState('general_setting');
-  const [activeApiPage, setActiveApiPage] = useState('courier_api');
-  const [activeMarketingPage, setActiveMarketingPage] = useState('tag_manager');
-  const [activeBlogsPage, setActiveBlogsPage] = useState('blog');
-  const [activeBannerPage, setActiveBannerPage] = useState('banner_category');
-  const [activeExpensePage, setActiveExpensePage] = useState('expense_categories');
-  const [activeReportsPage, setActiveReportsPage] = useState('stock_report');
+  const [activeLandingPage, setActiveLandingPage] = useState(initialNavigation.activeLandingPage);
+  const [activeAdminPage, setActiveAdminPage] = useState(initialNavigation.activeAdminPage);
+  const [activeCustomersPage, setActiveCustomersPage] = useState(initialNavigation.activeCustomersPage);
+  const [activeWebsitePage, setActiveWebsitePage] = useState(initialNavigation.activeWebsitePage);
+  const [activeApiPage, setActiveApiPage] = useState(initialNavigation.activeApiPage);
+  const [activeMarketingPage, setActiveMarketingPage] = useState(initialNavigation.activeMarketingPage);
+  const [activeBlogsPage, setActiveBlogsPage] = useState(initialNavigation.activeBlogsPage);
+  const [activeBannerPage, setActiveBannerPage] = useState(initialNavigation.activeBannerPage);
+  const [activeExpensePage, setActiveExpensePage] = useState(initialNavigation.activeExpensePage);
+  const [activeReportsPage, setActiveReportsPage] = useState(initialNavigation.activeReportsPage);
   const [siteSettings, setSiteSettings] = useState(null);
   const { data: suppliers } = useSupplierAllList();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -220,6 +433,42 @@ function App() {
   const [directCampaignError, setDirectCampaignError] = useState('');
 
   useEffect(() => {
+    writeNavigationState({
+      activePage,
+      activeOrderStatus,
+      activeProductPage,
+      activeSupplierPage,
+      activePurchasePage,
+      activeLandingPage,
+      activeAdminPage,
+      activeCustomersPage,
+      activeWebsitePage,
+      activeApiPage,
+      activeMarketingPage,
+      activeBlogsPage,
+      activeBannerPage,
+      activeExpensePage,
+      activeReportsPage,
+    });
+  }, [
+    activePage,
+    activeOrderStatus,
+    activeProductPage,
+    activeSupplierPage,
+    activePurchasePage,
+    activeLandingPage,
+    activeAdminPage,
+    activeCustomersPage,
+    activeWebsitePage,
+    activeApiPage,
+    activeMarketingPage,
+    activeBlogsPage,
+    activeBannerPage,
+    activeExpensePage,
+    activeReportsPage,
+  ]);
+
+  useEffect(() => {
     if (!isAuthenticated) return undefined;
     let active = true;
     const applySettings = (data) => {
@@ -239,6 +488,28 @@ function App() {
     return () => {
       active = false;
       window.removeEventListener('site-settings:update', handleUpdate);
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let active = true;
+
+    Promise.all([
+      bannerCategoryService.getAll({ limit: 100, sortBy: 'sortOrder', sortOrder: 'ASC' }),
+      bannerAdsService.getAll({ limit: 100, sortBy: 'sortOrder', sortOrder: 'ASC' }),
+    ])
+      .then(([categoryRes, bannerRes]) => {
+        if (!active) return;
+        setBannerCategories((categoryRes.data || []).map(normalizeBannerCategory));
+        setBanners((bannerRes.data || []).map(normalizeBanner));
+      })
+      .catch((err) => {
+        console.error('Banner data fetch failed', err);
+      });
+
+    return () => {
+      active = false;
     };
   }, [isAuthenticated]);
 
@@ -419,46 +690,78 @@ function App() {
     setBlogs((prev) => prev.filter((blog) => blog.id !== id));
   }
 
-  function saveBannerCategory(data) {
+  async function saveBannerCategory(data) {
     if (data.id) {
-      setBannerCategories((prev) => prev.map((category) => category.id === data.id ? { ...category, ...data } : category));
+      const res = await bannerCategoryService.update(data.id, {
+        name: data.name,
+        status: data.status,
+      });
+      const updated = normalizeBannerCategory(res.data);
+      setBannerCategories((prev) => prev.map((category) => category.id === data.id ? updated : category));
       setSelectedBannerCategory(null);
       return;
     }
 
-    setBannerCategories((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: data.name,
-        status: data.status,
-      },
-    ]);
+    const res = await bannerCategoryService.create({
+      name: data.name,
+      status: data.status,
+    });
+    setBannerCategories((prev) => [...prev, normalizeBannerCategory(res.data)]);
   }
 
-  function saveBanner(data) {
+  async function saveBanner(data) {
+    const fd = new FormData();
+    fd.append('linkUrl', data.link || '');
+    fd.append('categoryId', data.categoryId || '');
+    fd.append('categoryName', data.category || '');
+    fd.append('alt', data.imageText || data.category || '');
+    fd.append('status', data.status ? 'Active' : 'Inactive');
+    if (data.imageFile) fd.append('image', data.imageFile);
+
     if (data.id) {
-      setBanners((prev) => prev.map((banner) => banner.id === data.id ? { ...banner, ...data } : banner));
+      if (!data.imageFile && data.imageName) fd.append('file', data.imageName);
+      const res = await bannerAdsService.update(data.id, fd);
+      const updated = normalizeBanner(res.data);
+      setBanners((prev) => prev.map((banner) => banner.id === data.id ? updated : banner));
       setSelectedBanner(null);
       return;
     }
 
-    setBanners((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        link: data.link,
-        category: data.category,
-        imageName: data.imageName,
-        imageText: data.imageText,
-        imageColor: data.imageColor,
-        status: data.status,
-      },
-    ]);
+    const res = await bannerAdsService.create(fd);
+    setBanners((prev) => [...prev, normalizeBanner(res.data)]);
   }
 
-  function deleteBanner(id) {
-    setBanners((prev) => prev.filter((banner) => banner.id !== id));
+  async function toggleBannerCategoryStatus(category) {
+    const res = await bannerCategoryService.update(category.id, {
+      name: category.name,
+      status: !category.status,
+      sortOrder: category.sortOrder,
+    });
+    const updated = normalizeBannerCategory(res.data);
+    setBannerCategories((prev) => prev.map((item) => item.id === category.id ? updated : item));
+  }
+
+  async function toggleBannerStatus(banner) {
+    const fd = new FormData();
+    fd.append('linkUrl', banner.link || '');
+    fd.append('categoryId', banner.categoryId || '');
+    fd.append('categoryName', banner.category || '');
+    fd.append('file', banner.imageName || '');
+    fd.append('alt', banner.imageText || banner.category || '');
+    fd.append('status', banner.status ? 'Inactive' : 'Active');
+    const res = await bannerAdsService.update(banner.id, fd);
+    const updated = normalizeBanner(res.data);
+    setBanners((prev) => prev.map((item) => item.id === banner.id ? updated : item));
+  }
+
+  async function deleteBanner(id) {
+    if (!window.confirm('Delete this banner?')) return;
+    try {
+      await bannerAdsService.delete(id);
+      setBanners((prev) => prev.filter((banner) => banner.id !== id));
+    } catch (err) {
+      alert(err.message || 'Banner delete failed.');
+    }
   }
 
   function saveExpenseCategory(data) {
@@ -1113,6 +1416,7 @@ function App() {
             categories={bannerCategories}
             onCreate={() => { setSelectedBannerCategory(null); goBanner('banner_category_create'); }}
             onEdit={(category) => { setSelectedBannerCategory(category); goBanner('banner_category_edit'); }}
+            onToggleStatus={toggleBannerCategoryStatus}
           />
         );
       }
@@ -1144,6 +1448,7 @@ function App() {
             onCreate={() => { setSelectedBanner(null); goBanner('banner_ads_create'); }}
             onEdit={(banner) => { setSelectedBanner(banner); goBanner('banner_ads_edit'); }}
             onDelete={deleteBanner}
+            onToggleStatus={toggleBannerStatus}
           />
         );
       }
@@ -1170,7 +1475,7 @@ function App() {
         );
       }
 
-      return <BannerCategoryPage categories={bannerCategories} onCreate={() => goBanner('banner_category_create')} onEdit={(category) => { setSelectedBannerCategory(category); goBanner('banner_category_edit'); }} />;
+      return <BannerCategoryPage categories={bannerCategories} onCreate={() => goBanner('banner_category_create')} onEdit={(category) => { setSelectedBannerCategory(category); goBanner('banner_category_edit'); }} onToggleStatus={toggleBannerCategoryStatus} />;
     }
     if (activePage === 'expense') {
       const goExpense = (page) => { setActivePage('expense'); setActiveExpensePage(page); };
