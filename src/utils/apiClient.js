@@ -89,6 +89,7 @@ export async function apiRequest(path, options = {}) {
 
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
+    cache: "no-store",
     ...options,
     headers,
   });
@@ -99,6 +100,7 @@ export async function apiRequest(path, options = {}) {
       const freshToken = await doRefresh();
       const retryRes = await fetch(`${BASE}${path}`, {
         credentials: "include",
+        cache: "no-store",
         ...options,
         headers: { ...headers, Authorization: `Bearer ${freshToken}` },
       });

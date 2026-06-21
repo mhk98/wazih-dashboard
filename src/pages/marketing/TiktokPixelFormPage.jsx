@@ -10,10 +10,12 @@ export default function TiktokPixelFormPage({ mode = 'create', pixel, onSave, on
     status: pixel?.status || 'Active',
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   async function submit(e) {
     e.preventDefault();
     setSaving(true);
+    setError('');
     const payload = {
       pixelCode: form.pixelCode.trim(),
       accessToken: form.accessToken.trim(),
@@ -25,6 +27,8 @@ export default function TiktokPixelFormPage({ mode = 'create', pixel, onSave, on
       else await tiktokPixelService.create(payload);
       onSave?.();
       onNavigate('tiktok_pixels');
+    } catch (err) {
+      setError(err.message || 'TikTok pixel save failed');
     } finally {
       setSaving(false);
     }
@@ -37,6 +41,7 @@ export default function TiktokPixelFormPage({ mode = 'create', pixel, onSave, on
         <button onClick={() => onNavigate('tiktok_pixels')} className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Manage</button>
       </div>
       <form onSubmit={submit} className="mx-auto max-w-5xl rounded bg-white p-6 shadow-sm">
+        {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-600">{error}</div>}
         {[
           ['pixelCode', 'TikTok Pixel Code', true],
           ['accessToken', 'TikTok Access Token', true],
@@ -44,7 +49,7 @@ export default function TiktokPixelFormPage({ mode = 'create', pixel, onSave, on
         ].map(([key, label, required]) => (
           <label key={key} className="mb-5 block">
             <span className="mb-2 block text-sm font-semibold text-gray-600">{label} {required && '*'}</span>
-            <input required={required} value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+            <input type={key === 'accessToken' ? 'password' : 'text'} autoComplete="off" required={required} value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
               className="h-10 w-full rounded border border-gray-300 px-3 text-sm outline-none focus:border-indigo-400" />
           </label>
         ))}

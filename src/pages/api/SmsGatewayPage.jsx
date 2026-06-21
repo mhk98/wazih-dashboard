@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { siteSettingService } from '../../services/websiteService';
+import { integrationService } from '../../services/integrationService';
 
 const SETTING_TYPE = 'sms_gateway';
 
@@ -10,6 +11,7 @@ export default function SmsGatewayPage() {
   const [form, setForm]       = useState(DEFAULT);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
+  const [testing, setTesting] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
 
@@ -34,6 +36,7 @@ export default function SmsGatewayPage() {
       setSaving(false);
     }
   }
+  async function handleTest() { setTesting(true); setError(''); setSuccess(''); try { await siteSettingService.upsert(SETTING_TYPE, form); await integrationService.test('sms', 'custom'); setSuccess('SMS configuration is ready'); } catch (err) { setError(err.message); } finally { setTesting(false); } }
 
   if (loading) return <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading...</div>;
 
@@ -64,6 +67,7 @@ export default function SmsGatewayPage() {
             className="mt-6 rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-50">
             {saving ? 'Saving...' : 'Submit'}
           </button>
+          <button type="button" onClick={handleTest} disabled={testing} className="ml-2 mt-6 rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{testing ? 'Testing...' : 'Test Configuration'}</button>
         </form>
       </div>
     </div>

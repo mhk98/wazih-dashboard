@@ -37,7 +37,8 @@ export default function AdminUserPage({ onNavigate, onEditUser }) {
   }
 
   async function handleStatusToggle(user) {
-    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    const isActive = String(user.status || '').toLowerCase() === 'active';
+    const newStatus = isActive ? 'Inactive' : 'Active';
     try {
       await userService.updateStatus(user.Id, newStatus);
       refetch();
@@ -95,6 +96,7 @@ export default function AdminUserPage({ onNavigate, onEditUser }) {
               )}
               {!loading && users.map((user, i) => {
                 const fullName = [user.FirstName, user.LastName].filter(Boolean).join(' ') || user.Email;
+                const isActive = String(user.status || '').toLowerCase() === 'active';
                 return (
                   <tr key={user.Id} className="border-b border-gray-50 hover:bg-gray-50/60 transition">
                     <td className="px-4 py-3 text-gray-500">{(page - 1) * perPage + i + 1}</td>
@@ -110,10 +112,10 @@ export default function AdminUserPage({ onNavigate, onEditUser }) {
                         type="button"
                         onClick={() => handleStatusToggle(user)}
                         className={`px-2.5 py-1 rounded text-[10px] font-semibold transition ${
-                          user.status === 'active' ? 'bg-teal-100 text-teal-700 hover:bg-teal-200' : 'bg-red-100 text-red-600 hover:bg-red-200'
+                          isActive ? 'bg-teal-100 text-teal-700 hover:bg-teal-200' : 'bg-red-100 text-red-600 hover:bg-red-200'
                         }`}
                       >
-                        {user.status === 'active' ? 'Active' : 'Inactive'}
+                        {isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td className="px-4 py-3">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { siteSettingService } from '../../services/websiteService';
+import { integrationService } from '../../services/integrationService';
 
 const SETTING_TYPE = 'courier_api';
 
@@ -14,12 +15,20 @@ export default function CourierApiPage() {
   const [forms, setForms]   = useState(DEFAULT_CONFIGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
+  const [testing, setTesting] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     siteSettingService.get(SETTING_TYPE)
-      .then((res) => { if (res.data?.data) setForms({ ...DEFAULT_CONFIGS, ...res.data.data }); })
+      .then((res) => {
+        const data = res.data?.data;
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+        setForms({
+          steadfast: { ...DEFAULT_CONFIGS.steadfast, ...(data.steadfast && typeof data.steadfast === 'object' ? data.steadfast : {}) },
+          pathao: { ...DEFAULT_CONFIGS.pathao, ...(data.pathao && typeof data.pathao === 'object' ? data.pathao : {}) },
+        });
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -40,6 +49,7 @@ export default function CourierApiPage() {
       setSaving(false);
     }
   }
+  async function handleTest() { setTesting(true); setError(''); setSuccess(''); try { await siteSettingService.upsert(SETTING_TYPE, forms); await integrationService.test('courier', activeCourier); setSuccess(`${form.label} connection successful`); } catch (err) { setError(err.message); } finally { setTesting(false); } }
 
   const form = forms[activeCourier];
   if (loading) return <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading...</div>;
@@ -87,6 +97,7 @@ export default function CourierApiPage() {
               className="mt-6 rounded bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-50">
               {saving ? 'Saving...' : 'Submit'}
             </button>
+            <button type="button" onClick={handleTest} disabled={testing} className="ml-2 mt-6 rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{testing ? 'Testing...' : 'Test Connection'}</button>
           </form>
         </div>
       </div>

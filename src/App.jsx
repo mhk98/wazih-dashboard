@@ -53,6 +53,8 @@ import CustomerIpBlockPage from './pages/customers/CustomerIpBlockPage';
 import LandingPageCreatePage from './pages/landing/LandingPageCreatePage';
 import LandingPageManagePage from './pages/landing/LandingPageManagePage';
 import LandingPageViewPage from './pages/landing/LandingPageViewPage';
+import LandingPageHeaderPage from './pages/landing/LandingPageHeaderPage';
+import LandingPageFooterPage from './pages/landing/LandingPageFooterPage';
 import { landingPageService } from './services/landingPageService';
 import WebsiteGeneralSettingPage from './pages/website/WebsiteGeneralSettingPage';
 import WebsiteSocialMediaPage from './pages/website/WebsiteSocialMediaPage';
@@ -92,6 +94,7 @@ import ExpenseCategoryFormPage from './pages/expense/ExpenseCategoryFormPage';
 import ExpensePage from './pages/expense/ExpensePage';
 import ExpenseFormPage from './pages/expense/ExpenseFormPage';
 import ReportsPage from './pages/reports/ReportsPage';
+import { expenseService } from './services/reportService';
 import { siteSettingService } from './services/websiteService';
 import { applyDocumentFavicon, applyDocumentTitle, getFavicon, getSiteName, normalizeSettingData } from './utils/siteBranding';
 
@@ -411,26 +414,23 @@ function App() {
     { id: 6, link: '', category: 'Main Slider (775px x 400px)', imageName: '', imageText: 'Tower', imageColor: 'linear-gradient(135deg, #bae6fd, #334155)', status: true },
   ]);
   const [selectedBanner, setSelectedBanner] = useState(null);
-  const [expenseCategories, setExpenseCategories] = useState([
-    { id: 1, name: 'Polash', status: true },
-    { id: 2, name: 'Refreshment Exp', status: true },
-    { id: 3, name: 'Ammar Medicine', status: true },
-    { id: 4, name: 'Product Expense', status: true },
-    { id: 5, name: 'Dolar Expense', status: true },
-    { id: 6, name: 'Employee Salary', status: true },
-    { id: 7, name: 'Boost Cost', status: true },
-    { id: 8, name: 'Utility Bill', status: true },
-  ]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
   const [selectedExpenseCategory, setSelectedExpenseCategory] = useState(null);
-  const [expenses, setExpenses] = useState([
-    { id: 1, title: 'Product Expense', category: 'Product Expense', date: '2026-06-01', amount: 2500, note: '', status: true },
-    { id: 2, title: 'Refreshment', category: 'Refreshment Exp', date: '2026-06-03', amount: 650, note: '', status: true },
-    { id: 3, title: 'Utility Bill', category: 'Utility Bill', date: '2026-06-08', amount: 1200, note: '', status: true },
-  ]);
+  const [expenses, setExpenses] = useState([]);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [directCampaign, setDirectCampaign] = useState(null);
   const [directCampaignLoading, setDirectCampaignLoading] = useState(Boolean(directLandingPageId));
   const [directCampaignError, setDirectCampaignError] = useState('');
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    Promise.all([expenseService.getCategories(), expenseService.getAll()])
+      .then(([categoryResponse, expenseResponse]) => {
+        setExpenseCategories((categoryResponse.data || []).map((item) => ({ id: item.Id, name: item.name, status: item.status === 'Active' })));
+        setExpenses((expenseResponse.data || []).map((item) => ({ id: item.Id, title: item.title, category: item.categoryName || '', categoryId: item.categoryId, date: item.date, amount: Number(item.amount || 0), note: item.note || '', status: item.status === 'Active' })));
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   useEffect(() => {
     writeNavigationState({
@@ -764,45 +764,36 @@ function App() {
     }
   }
 
-  function saveExpenseCategory(data) {
+  async function saveExpenseCategory(data) {
     if (data.id) {
-      setExpenseCategories((prev) => prev.map((category) => category.id === data.id ? { ...category, ...data } : category));
+      const response = await expenseService.updateCategory(data.id, data);
+      const saved = response.data;
+      setExpenseCategories((prev) => prev.map((category) => category.id === data.id ? { id: saved.Id, name: saved.name, status: saved.status === 'Active' } : category));
       setSelectedExpenseCategory(null);
       return;
     }
-
-    setExpenseCategories((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: data.name,
-        status: data.status,
-      },
-    ]);
+    const response = await expenseService.createCategory(data);
+    const saved = response.data;
+    setExpenseCategories((prev) => [...prev, { id: saved.Id, name: saved.name, status: saved.status === 'Active' }]);
   }
 
-  function saveExpense(data) {
+  async function saveExpense(data) {
+    const category = expenseCategories.find((item) => item.name === data.category);
+    const payload = { ...data, categoryId: category?.id || null, categoryName: data.category };
     if (data.id) {
-      setExpenses((prev) => prev.map((expense) => expense.id === data.id ? { ...expense, ...data } : expense));
+      const response = await expenseService.update(data.id, payload);
+      const saved = response.data;
+      setExpenses((prev) => prev.map((expense) => expense.id === data.id ? { ...data, id: saved.Id, amount: Number(saved.amount), category: saved.categoryName, status: saved.status === 'Active' } : expense));
       setSelectedExpense(null);
       return;
     }
-
-    setExpenses((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        title: data.title,
-        category: data.category,
-        date: data.date,
-        amount: data.amount,
-        note: data.note,
-        status: data.status,
-      },
-    ]);
+    const response = await expenseService.create(payload);
+    const saved = response.data;
+    setExpenses((prev) => [...prev, { ...data, id: saved.Id, amount: Number(saved.amount), category: saved.categoryName, status: saved.status === 'Active' }]);
   }
 
-  function deleteExpense(id) {
+  async function deleteExpense(id) {
+    await expenseService.delete(id);
     setExpenses((prev) => prev.filter((expense) => expense.id !== id));
   }
 
@@ -1064,6 +1055,12 @@ function App() {
             onEditCampaign={(c) => { setSelectedCampaign(c); setActiveLandingPage('landing_edit'); }}
           />
         );
+      }
+      if (activeLandingPage === 'landing_footer') {
+        return <LandingPageFooterPage />;
+      }
+      if (activeLandingPage === 'landing_header') {
+        return <LandingPageHeaderPage />;
       }
       if (activeLandingPage === 'landing_view' && selectedCampaign) {
         return (
@@ -1546,7 +1543,7 @@ function App() {
       return <ExpenseCategoryPage categories={expenseCategories} onCreate={() => goExpense('expense_category_create')} onEdit={(category) => { setSelectedExpenseCategory(category); goExpense('expense_category_edit'); }} />;
     }
     if (activePage === 'reports') {
-      return <ReportsPage reportKey={activeReportsPage} />;
+      return <ReportsPage key={activeReportsPage} reportKey={activeReportsPage} />;
     }
     return <Dashboard />;
   }

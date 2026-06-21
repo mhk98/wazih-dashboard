@@ -10,10 +10,12 @@ export default function GoogleAdsFormPage({ mode = 'create', config, onSave, onN
     status: config?.status || 'Active',
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   async function submit(e) {
     e.preventDefault();
     setSaving(true);
+    setError('');
     const payload = {
       conversionId: form.conversionId.trim(),
       conversionLabel: form.conversionLabel.trim(),
@@ -25,6 +27,8 @@ export default function GoogleAdsFormPage({ mode = 'create', config, onSave, onN
       else await googleAdsService.create(payload);
       onSave?.();
       onNavigate('google_ads');
+    } catch (err) {
+      setError(err.message || 'Google Ads config save failed');
     } finally {
       setSaving(false);
     }
@@ -37,6 +41,7 @@ export default function GoogleAdsFormPage({ mode = 'create', config, onSave, onN
         <button onClick={() => onNavigate('google_ads')} className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Manage</button>
       </div>
       <form onSubmit={submit} className="mx-auto max-w-5xl rounded bg-white p-6 shadow-sm">
+        {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-600">{error}</div>}
         {[
           ['conversionId', 'Conversion ID', true],
           ['conversionLabel', 'Conversion Label', true],

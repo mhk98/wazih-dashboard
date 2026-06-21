@@ -6,4 +6,10 @@ export const landingPageService = {
   create: (data) => apiRequest('/landing-pages/create', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`/landing-pages/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiRequest(`/landing-pages/${id}`, { method: 'DELETE' }),
+  getHeader: () => apiRequest('/landing-pages/header'),
+  getPublicHeader: () => apiRequest('/landing-pages/header/public'),
+  updateHeader: (data) => apiRequest('/landing-pages/header', { method: 'PUT', body: JSON.stringify(data) }),
+  getFooter: () => apiRequest('/landing-pages/footer'),
+  getPublicFooter: () => apiRequest('/landing-pages/footer/public'),
+  updateFooter: (data) => apiRequest('/landing-pages/footer', { method: 'PUT', body: JSON.stringify(data) }),
 };

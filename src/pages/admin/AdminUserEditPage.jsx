@@ -12,7 +12,7 @@ export default function AdminUserEditPage({ user, onSave, onNavigate }) {
     Password:        '',
     confirmPassword: '',
     role:            user?.role      ?? 'user',
-    status:          user?.status    ?? 'active',
+    status:          String(user?.status || 'Active').toLowerCase() === 'active' ? 'Active' : 'Inactive',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -120,8 +120,8 @@ export default function AdminUserEditPage({ user, onSave, onNavigate }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select value={form.status} onChange={(e) => set('status', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
               </select>
             </div>
           </div>

@@ -1,12 +1,19 @@
-import { useState } from 'react';
-import { Menu, Maximize2, Bell, LogOut, ChevronDown, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, Maximize2, Minimize2, Bell, LogOut, ChevronDown, User, CheckCheck, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getLogo, getSiteName } from '../utils/siteBranding';
+import { connectNotificationSocket, disconnectNotificationSocket, notificationService } from '../services/notificationService';
 
 export default function TopNav({ siteSettings }) {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const userId = user?.Id;
   const logo = getLogo(siteSettings);
   const siteName = getSiteName(siteSettings);
 
@@ -18,13 +25,118 @@ export default function TopNav({ siteSettings }) {
     ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
     : '';
 
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return undefined;
+    let active = true;
+    const loadNotifications = async () => {
+      try {
+        const [listResponse, countResponse] = await Promise.all([
+          notificationService.getAll({ page: 1, limit: 20 }),
+          notificationService.getUnreadCount(),
+        ]);
+        if (!active) return;
+        setNotifications(listResponse.data || []);
+        setUnreadCount(Number(countResponse.data?.count || 0));
+      } catch {
+        // Socket reconnection or the next dropdown open will retry.
+      } finally {
+        if (active) setNotificationsLoading(false);
+      }
+    };
+
+    void loadNotifications();
+    const socket = connectNotificationSocket();
+    const handleNew = (notification) => {
+      setNotifications((previous) => [notification, ...previous.filter((item) => item.Id !== notification.Id)].slice(0, 20));
+      setUnreadCount((count) => count + 1);
+    };
+    const handleReady = () => { void loadNotifications(); };
+    const handleRead = ({ id, unreadCount: count }) => {
+      setNotifications((previous) => previous.map((item) => item.Id === id ? { ...item, isRead: true, readAt: new Date().toISOString() } : item));
+      setUnreadCount(Number(count || 0));
+    };
+    const handleReadAll = () => {
+      setNotifications((previous) => previous.map((item) => ({ ...item, isRead: true, readAt: item.readAt || new Date().toISOString() })));
+      setUnreadCount(0);
+    };
+    const handleDeleted = ({ id, unreadCount: count }) => {
+      setNotifications((previous) => previous.filter((item) => item.Id !== id));
+      setUnreadCount(Number(count || 0));
+    };
+    socket?.on('notification:new', handleNew);
+    socket?.on('notification:ready', handleReady);
+    socket?.on('notification:read', handleRead);
+    socket?.on('notification:read-all', handleReadAll);
+    socket?.on('notification:deleted', handleDeleted);
+
+    return () => {
+      active = false;
+      socket?.off('notification:new', handleNew);
+      socket?.off('notification:ready', handleReady);
+      socket?.off('notification:read', handleRead);
+      socket?.off('notification:read-all', handleReadAll);
+      socket?.off('notification:deleted', handleDeleted);
+      disconnectNotificationSocket();
+    };
+  }, [userId]);
+
   async function handleLogout() {
     setLoggingOut(true);
     try {
+      disconnectNotificationSocket();
       await logout();
     } finally {
       setLoggingOut(false);
     }
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        window.alert('এই browser fullscreen mode support করে না।');
+      }
+    } catch (error) {
+      window.alert(error.message || 'Fullscreen mode চালু করা যায়নি।');
+    }
+  }
+
+  async function openNotification(notification) {
+    if (!notification.isRead) {
+      try {
+        await notificationService.markAsRead(notification.Id);
+        setNotifications((previous) => previous.map((item) => item.Id === notification.Id ? { ...item, isRead: true, readAt: new Date().toISOString() } : item));
+        setUnreadCount((count) => Math.max(0, count - 1));
+      } catch { /* keep the item visible if the request fails */ }
+    }
+    if (notification.url) window.location.assign(notification.url);
+  }
+
+  async function markAllRead() {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications((previous) => previous.map((item) => ({ ...item, isRead: true })));
+      setUnreadCount(0);
+    } catch { /* leave current state unchanged */ }
+  }
+
+  async function deleteNotification(event, id) {
+    event.stopPropagation();
+    const target = notifications.find((item) => item.Id === id);
+    try {
+      await notificationService.delete(id);
+      setNotifications((previous) => previous.filter((item) => item.Id !== id));
+      if (target && !target.isRead) setUnreadCount((count) => Math.max(0, count - 1));
+    } catch { /* leave current state unchanged */ }
   }
 
   return (
@@ -54,13 +166,51 @@ export default function TopNav({ siteSettings }) {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <button className="p-1 hover:bg-gray-100 rounded">
-          <Maximize2 size={18} className="text-gray-500" />
+        <button type="button" onClick={toggleFullscreen} className="p-1 hover:bg-gray-100 rounded" aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+          {isFullscreen ? <Minimize2 size={18} className="text-gray-500" /> : <Maximize2 size={18} className="text-gray-500" />}
         </button>
-        <button className="relative p-1 hover:bg-gray-100 rounded">
-          <Bell size={18} className="text-gray-500" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">70</span>
-        </button>
+        <div className="relative">
+          <button onClick={() => { setNotificationOpen((value) => !value); setDropdownOpen(false); }} className="relative p-1 hover:bg-gray-100 rounded" aria-label="Notifications">
+            <Bell size={18} className="text-gray-500" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-bold">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            )}
+          </button>
+
+          {notificationOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setNotificationOpen(false)} />
+              <div className="absolute right-0 top-full z-20 mt-2 w-[360px] max-w-[90vw] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">Notifications</p>
+                    <p className="text-[11px] text-gray-400">{unreadCount} unread</p>
+                  </div>
+                  {unreadCount > 0 && <button onClick={markAllRead} className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"><CheckCheck size={14} /> Mark all read</button>}
+                </div>
+                <div className="max-h-[420px] overflow-y-auto">
+                  {notificationsLoading ? (
+                    <p className="px-4 py-10 text-center text-xs text-gray-400">Loading notifications...</p>
+                  ) : notifications.length === 0 ? (
+                    <div className="px-4 py-10 text-center"><Bell size={24} className="mx-auto mb-2 text-gray-300" /><p className="text-xs text-gray-400">No notifications yet</p></div>
+                  ) : notifications.map((notification) => (
+                    <div key={notification.Id} className={`group flex w-full border-b border-gray-50 transition hover:bg-gray-50 ${notification.isRead ? 'bg-white' : 'bg-blue-50/60'}`}>
+                      <button onClick={() => openNotification(notification)} className="flex min-w-0 flex-1 gap-3 px-4 py-3 text-left">
+                        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? 'bg-gray-200' : notification.priority === 'high' ? 'bg-red-500' : 'bg-blue-500'}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-bold text-gray-800">{notification.title}</span>
+                          <span className="mt-0.5 line-clamp-2 block text-[11px] leading-4 text-gray-500">{notification.message}</span>
+                          <span className="mt-1 block text-[10px] text-gray-400">{formatNotificationTime(notification.createdAt)}</span>
+                        </span>
+                      </button>
+                      <button type="button" aria-label="Delete notification" onClick={(event) => deleteNotification(event, notification.Id)} className="mr-3 mt-3 hidden self-start text-gray-300 hover:text-red-500 group-hover:block"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* User dropdown */}
         <div className="relative">
@@ -119,4 +269,14 @@ function NavBtn({ color, label }) {
       {label}
     </button>
   );
+}
+
+function formatNotificationTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return date.toLocaleDateString();
 }

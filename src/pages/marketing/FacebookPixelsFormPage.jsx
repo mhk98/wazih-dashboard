@@ -20,7 +20,7 @@ export default function FacebookPixelsFormPage({ mode = 'create', pixel, onSave,
       const payload = { pixelsId: form.pixelsId.trim(), metaAccessToken: form.metaAccessToken.trim(), testEventId: form.testEventId.trim(), status: form.status };
       if (isEdit) { await facebookPixelService.update(pixel.Id, payload); }
       else         { await facebookPixelService.create(payload); }
-      onSave && onSave();
+      onSave?.({ ...payload, id: pixel?.Id });
       onNavigate('facebook_pixels');
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -44,10 +44,10 @@ export default function FacebookPixelsFormPage({ mode = 'create', pixel, onSave,
       <div className="mx-auto max-w-5xl rounded bg-white p-6 shadow-sm">
         {error && <div className="mb-4 px-4 py-2 bg-red-50 border border-red-200 text-red-600 text-xs rounded">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {[['pixelsId', 'Pixels ID', true], ['metaAccessToken', 'Meta Access Token', true], ['testEventId', 'Test Event ID', false]].map(([key, label, req]) => (
+          {[['pixelsId', 'Pixels ID', true], ['metaAccessToken', 'Meta Access Token', true], ['testEventId', 'Test Event Code', false]].map(([key, label, req]) => (
             <label key={key} className="mb-6 block">
               <span className="mb-2 block text-sm font-semibold text-gray-500">{label} {req && '*'}</span>
-              <input type="text" required={req} value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+              <input type={key === 'metaAccessToken' ? 'password' : 'text'} autoComplete="off" required={req} value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
                 className="h-9 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
             </label>
           ))}

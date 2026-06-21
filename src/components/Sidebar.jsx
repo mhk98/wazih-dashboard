@@ -10,10 +10,12 @@ import {
   Ban, SlidersHorizontal, Share2, Phone, Truck as TruckIcon, CircleDot, FilePlus,
   Bike, Banknote, MessageSquare, ShieldAlert,
   Cpu, Ticket, LayoutGrid, Activity, FileText, Folder, TrendingUp,
+  PanelBottom, PanelTop,
 } from 'lucide-react';
 import { orderStatusService, siteSettingService } from '../services/websiteService';
 import { applyDocumentFavicon, getFavicon, getLogo, getSiteName, normalizeSettingData } from '../utils/siteBranding';
 import { normalizeOrderStatuses } from '../utils/orderStatuses';
+import { cacheService } from '../services/cacheService';
 
 // ── Orders submenu ──────────────────────────────────────────
 const orderSubMenuItems = [
@@ -65,6 +67,8 @@ const supplierSubMenuItems = [
 const landingPageSubMenuItems = [
   { key: 'landing_create', label: 'Create', icon: PlusCircle,  color: 'text-green-400' },
   { key: 'landing_manage', label: 'Manage', icon: LayoutList,  color: 'text-cyan-400'  },
+  { key: 'landing_header', label: 'Header', icon: PanelTop, color: 'text-pink-400' },
+  { key: 'landing_footer', label: 'Footer', icon: PanelBottom, color: 'text-amber-400' },
 ];
 
 // ── Admin & Permission submenu ────────────────────────────────
@@ -174,6 +178,7 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
   const [bannerOpen, setBannerOpen] = useState(activePage === 'banner');
   const [expenseOpen, setExpenseOpen] = useState(activePage === 'expense');
   const [reportsOpen, setReportsOpen] = useState(activePage === 'reports');
+  const [cacheClearing, setCacheClearing] = useState(false);
   const currentSettings = externalSiteSettings || siteSettings;
   const currentLogo = getLogo(currentSettings);
   const siteName = getSiteName(currentSettings);
@@ -183,6 +188,25 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
     icon: ORDER_STATUS_ICONS[status.key] || CircleDot,
     color: orderSubMenuItems.find((item) => item.key === status.key)?.color || ORDER_STATUS_ICON_COLORS[index % ORDER_STATUS_ICON_COLORS.length],
   }));
+
+  async function handleCacheClear() {
+    if (cacheClearing || !window.confirm('Application cache clear করবেন?')) return;
+    setCacheClearing(true);
+    try {
+      await cacheService.clear();
+      if ('caches' in window) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.map((key) => window.caches.delete(key)));
+      }
+      sessionStorage.clear();
+      window.dispatchEvent(new CustomEvent('app-cache:cleared'));
+      window.alert('Cache successfully cleared.');
+      window.location.reload();
+    } catch (error) {
+      window.alert(error.message || 'Cache clear failed.');
+      setCacheClearing(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -616,7 +640,7 @@ export default function Sidebar({ activePage, onNavigate, activeOrderStatus, onO
             />
           ))}
         </ExpandableItem>
-        <SidebarItem icon={RefreshCw} label="Cache Clear" onClick={() => {}} />
+        <SidebarItem icon={RefreshCw} label={cacheClearing ? "Clearing..." : "Cache Clear"} onClick={handleCacheClear} />
       </nav>
     </aside>
   );

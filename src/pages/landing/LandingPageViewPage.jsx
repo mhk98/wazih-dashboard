@@ -15,6 +15,7 @@ import heroImage from "../../assets/hero.png";
 import sslcommerzImage from "../../assets/sslcommerz.png";
 import { landingPageService } from "../../services/landingPageService";
 import { orderService } from "../../services/orderService";
+import { trackMarketingEvent } from "../../services/trackingService";
 import {
   siteSettingService,
   websitePageService,
@@ -39,7 +40,7 @@ const WINNERS = [
   "প্রান্তির রহমান",
 ];
 
-export default function LandingPageViewPage({ campaign, onBack }) {
+export default function LandingPageViewPage({ campaign }) {
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -92,6 +93,21 @@ export default function LandingPageViewPage({ campaign, onBack }) {
   }, []);
 
   useEffect(() => {
+    const contentId = String(campaign?.productId || campaign?.Id || "");
+    const commonData = {
+      content_ids: contentId ? [contentId] : [],
+      content_id: contentId,
+      content_type: "product",
+      content_name: title,
+      contents: contentId ? [{ content_id: contentId, quantity: 1, price }] : [],
+      value: price,
+      currency: "BDT",
+    };
+    void trackMarketingEvent("PageView");
+    void trackMarketingEvent("ViewContent", { customData: commonData });
+  }, [campaign?.Id, campaign?.productId, price, title]);
+
+  useEffect(() => {
     let active = true;
 
     Promise.all([
@@ -99,20 +115,26 @@ export default function LandingPageViewPage({ campaign, onBack }) {
       siteSettingService.get("contact").catch(() => null),
       siteSettingService.get("social_media").catch(() => null),
       websitePageService.getAll({ limit: 100 }).catch(() => ({ data: [] })),
-    ]).then(([generalRes, contactRes, socialRes, pageRes]) => {
-      if (!active) return;
+      landingPageService.getPublicHeader().catch(() => null),
+      landingPageService.getPublicFooter().catch(() => null),
+    ]).then(
+      ([generalRes, contactRes, socialRes, pageRes, headerRes, footerRes]) => {
+        if (!active) return;
 
-      setFooterSettings({
-        general: normalizeSettingData(generalRes?.data?.data),
-        contact: normalizeSettingData(contactRes?.data?.data),
-        social: normalizeSocialMedia(socialRes?.data?.data),
-      });
-      setFooterPages(
-        (pageRes?.data || [])
-          .filter((page) => isActiveStatus(page?.status))
-          .slice(0, 4),
-      );
-    });
+        setFooterSettings({
+          general: normalizeSettingData(generalRes?.data?.data),
+          contact: normalizeSettingData(contactRes?.data?.data),
+          social: normalizeSocialMedia(socialRes?.data?.data),
+          header: headerRes?.data || null,
+          footer: footerRes?.data || null,
+        });
+        setFooterPages(
+          (pageRes?.data || [])
+            .filter((page) => isActiveStatus(page?.status))
+            .slice(0, 4),
+        );
+      },
+    );
 
     return () => {
       active = false;
@@ -152,6 +174,22 @@ export default function LandingPageViewPage({ campaign, onBack }) {
     }
 
     setPlacingOrder(true);
+    const contentId = String(campaign?.productId || campaign?.Id || "");
+    const trackingData = {
+      content_ids: contentId ? [contentId] : [],
+      content_id: contentId,
+      content_type: "product",
+      content_name: title,
+      contents: contentId ? [{ content_id: contentId, quantity: 1, price }] : [],
+      value: total,
+      currency: "BDT",
+      num_items: 1,
+    };
+    const trackingUser = { name: form.name.trim(), phone: form.phone.trim() };
+    void trackMarketingEvent("InitiateCheckout", {
+      userData: trackingUser,
+      customData: trackingData,
+    });
     try {
       const shippingLabel =
         SHIPPING_OPTIONS.find((option) => option.id === form.shipping)?.label ||
@@ -173,7 +211,18 @@ export default function LandingPageViewPage({ campaign, onBack }) {
         orderDate: today,
       };
       const response = await orderService.createOrder(payload);
-      setPlacedOrder(response.data || payload);
+      const placedOrderData = response.data || payload;
+      setPlacedOrder(placedOrderData);
+      void trackMarketingEvent("Purchase", {
+        userData: {
+          ...trackingUser,
+          customerId: placedOrderData.customerId || placedOrderData.customer?.Id,
+        },
+        customData: {
+          ...trackingData,
+          order_id: placedOrderData.orderId || placedOrderData.Id,
+        },
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setOrderError(err.message || "Order create failed. Please try again.");
@@ -245,7 +294,7 @@ export default function LandingPageViewPage({ campaign, onBack }) {
 
   if (template === "Template Design 2") {
     return (
-      <PreviewShell title={title} onBack={onBack} tone="light">
+      <PreviewShell tone="light">
         <TemplateDesign2 data={viewData} />
       </PreviewShell>
     );
@@ -253,7 +302,7 @@ export default function LandingPageViewPage({ campaign, onBack }) {
 
   if (template === "Template Design 3") {
     return (
-      <PreviewShell title={title} onBack={onBack} tone="dark">
+      <PreviewShell tone="dark">
         <TemplateDesign3 data={viewData} />
       </PreviewShell>
     );
@@ -261,21 +310,6 @@ export default function LandingPageViewPage({ campaign, onBack }) {
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#fbfaf6] text-slate-900">
-      <div className="sticky top-0 z-40 flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2 print:hidden">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 transition hover:text-blue-600"
-        >
-          <ArrowLeft size={14} />
-          Back to Manage
-        </button>
-        <span className="text-slate-300">|</span>
-        <span className="truncate text-xs text-slate-400">
-          Preview: {title}
-        </span>
-      </div>
-
       <div
         className="min-h-screen"
         style={{
@@ -283,14 +317,28 @@ export default function LandingPageViewPage({ campaign, onBack }) {
             "radial-gradient(circle at 12% 16%, rgba(211, 172, 76, 0.08) 0 48px, transparent 49px), radial-gradient(circle at 84% 20%, rgba(211, 172, 76, 0.07) 0 58px, transparent 59px), linear-gradient(90deg, rgba(248, 246, 238, 0.92), rgba(255,255,255,0.8), rgba(248,246,238,0.92))",
         }}
       >
-        <TopStrip phone={phone} onTrack={() => setShowTrackOrder(true)} />
+        <TopStrip
+          phone={phone}
+          onTrack={() => setShowTrackOrder(true)}
+          settings={footerSettings?.header}
+        />
 
         <main className="mx-auto max-w-[1340px] px-4 pb-12">
-          <header className="py-4 text-center">
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-white shadow-sm">
-              W
-            </div>
-          </header>
+          {footerSettings?.header?.status !== false && (
+            <header className="py-4 text-center">
+              {footerSettings?.header?.logoUrl ? (
+                <img
+                  src={footerSettings.header.logoUrl}
+                  alt={footerSettings.header.logoAlt || "Website logo"}
+                  className="mx-auto h-12 max-w-48 object-contain"
+                />
+              ) : (
+                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-white shadow-sm">
+                  W
+                </div>
+              )}
+            </header>
+          )}
 
           <Notice tone="yellow">
             আজকে কিনুন ৫ পিস আতর পারফিউম কম্বো প্যাকের সাথে নিশ্চিত ২ টি
@@ -582,35 +630,17 @@ export default function LandingPageViewPage({ campaign, onBack }) {
           ) : null}
         </main>
 
-        <Footer
-          phone={phone}
-          settings={footerSettings}
-          pages={footerPages}
-        />
+        <Footer phone={phone} settings={footerSettings} pages={footerPages} />
       </div>
     </div>
   );
 }
 
-function PreviewShell({ title, onBack, tone = "light", children }) {
+function PreviewShell({ tone = "light", children }) {
   return (
     <div
       className={`flex-1 overflow-y-auto ${tone === "dark" ? "bg-slate-950 text-white" : "bg-white text-slate-900"}`}
     >
-      <div className="sticky top-0 z-40 flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2 text-slate-900 print:hidden">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 transition hover:text-blue-600"
-        >
-          <ArrowLeft size={14} />
-          Back to Manage
-        </button>
-        <span className="text-slate-300">|</span>
-        <span className="truncate text-xs text-slate-400">
-          Preview: {title}
-        </span>
-      </div>
       {children}
     </div>
   );
@@ -635,7 +665,11 @@ function OrderSuccessPage({
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 text-slate-900">
-      <TopStrip phone={phoneNumber} onTrack={onTrack} />
+      <TopStrip
+        phone={phoneNumber}
+        onTrack={onTrack}
+        settings={footerSettings?.header}
+      />
       <main className="mx-auto max-w-3xl px-4 py-10">
         <div className="text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -835,7 +869,15 @@ function TrackOrderPage({ phoneNumber, onBack, footerSettings, footerPages }) {
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f4f0e8] text-slate-900">
-      <TopStrip phone={phoneNumber} onTrack={() => document.getElementById("track-order-search")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+      <TopStrip
+        phone={phoneNumber}
+        settings={footerSettings?.header}
+        onTrack={() =>
+          document
+            .getElementById("track-order-search")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+      />
       <main
         className="min-h-screen px-4 py-10"
         style={{
@@ -867,7 +909,10 @@ function TrackOrderPage({ phoneNumber, onBack, footerSettings, footerPages }) {
             </div>
           </div>
 
-          <section id="track-order-search" className="mt-6 rounded-xl border border-white/80 bg-white/85 p-8 text-center shadow-sm backdrop-blur">
+          <section
+            id="track-order-search"
+            className="mt-6 rounded-xl border border-white/80 bg-white/85 p-8 text-center shadow-sm backdrop-blur"
+          >
             <h2 className="text-2xl font-black text-slate-900">
               Search Your Order
             </h2>
@@ -992,7 +1037,11 @@ function TemplateDesign2({ data }) {
 
   return (
     <div className="min-h-screen bg-[#f7fbf8]">
-      <TopStrip phone={phone} onTrack={onTrackOrder} />
+      <TopStrip
+        phone={phone}
+        onTrack={onTrackOrder}
+        settings={data.footerSettings?.header}
+      />
       <main className="mx-auto max-w-6xl px-4 pb-14">
         <section className="grid min-h-[520px] items-center gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="overflow-hidden rounded border border-emerald-100 bg-white shadow-sm">
@@ -1039,10 +1088,7 @@ function TemplateDesign2({ data }) {
           <DescriptionBlock title={descriptionTitle} text={shortDescription} />
         </section>
 
-        <WinnerGrid
-          reviewImages={reviewImages}
-          title="Campaign Winners"
-        />
+        <WinnerGrid reviewImages={reviewImages} title="Campaign Winners" />
         <OrderFormBlock data={data} />
         <RelatedProductsSection
           relatedProducts={relatedProducts}
@@ -1076,19 +1122,11 @@ function TemplateDesign3({ data }) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <div className="border-b border-white/10 bg-slate-900">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 text-xs font-bold text-slate-300">
-          <span>Wazih Campaign</span>
-          <button
-            type="button"
-            onClick={onTrackOrder}
-            className="text-amber-300 hover:text-amber-200"
-          >
-            Track Order
-          </button>
-          <span>{phone}</span>
-        </div>
-      </div>
+      <TopStrip
+        phone={phone}
+        onTrack={onTrackOrder}
+        settings={data.footerSettings?.header}
+      />
 
       <main className="mx-auto max-w-6xl px-4 pb-14">
         <section className="grid gap-6 py-8 lg:grid-cols-[1fr_420px]">
@@ -1167,11 +1205,7 @@ function TemplateDesign3({ data }) {
           />
         </section>
 
-        <WinnerGrid
-          reviewImages={reviewImages}
-          title="Customer Proof"
-          dark
-        />
+        <WinnerGrid reviewImages={reviewImages} title="Customer Proof" dark />
       </main>
       <Footer
         phone={phone}
@@ -1465,23 +1499,78 @@ function RelatedProductsSection({ relatedProducts }) {
   );
 }
 
-function TopStrip({ phone, onTrack }) {
+function TopStrip({ phone, onTrack, settings }) {
+  if (settings?.status === false) return null;
+  const supportPhone = settings?.supportPhone || phone;
+  const socialLinks = settings?.socialLinks?.length
+    ? settings.socialLinks
+    : [
+        { platform: "facebook", label: "Facebook", url: "" },
+        { platform: "youtube", label: "YouTube", url: "" },
+        { platform: "instagram", label: "Instagram", url: "" },
+      ];
   return (
-    <div className="bg-[#1d1d1b] text-white">
-      <div className="mx-auto flex max-w-[980px] items-center justify-between px-4 py-2 text-[11px]">
-        <p>Need any help? Call {phone} or contact support</p>
-        <div className="flex items-center gap-3 text-amber-300">
+    <div
+      style={{
+        backgroundColor: settings?.backgroundColor || "#1d1d1b",
+        color: settings?.textColor || "#ffffff",
+      }}
+    >
+      <div className="mx-auto flex w-full max-w-[1680px] flex-wrap items-center justify-between gap-x-16 gap-y-2 px-5 py-2.5 text-sm md:flex-nowrap md:px-8">
+        <p className="whitespace-nowrap">
+          {settings?.helpText || "Need any help? Call"}{" "}
+          <a
+            href={
+              supportPhone
+                ? `tel:${String(supportPhone).replace(/\s+/g, "")}`
+                : undefined
+            }
+            className="font-semibold"
+          >
+            {supportPhone}
+          </a>
+          {settings?.supportText ? " or " : ""}
+          {settings?.supportText &&
+            (settings.supportUrl ? (
+              <a
+                href={settings.supportUrl}
+                style={{ color: settings?.accentColor || "#fbbf24" }}
+              >
+                {settings.supportText}
+              </a>
+            ) : (
+              <span style={{ color: settings?.accentColor || "#fbbf24" }}>
+                {settings.supportText}
+              </span>
+            ))}
+        </p>
+        <div
+          className="ml-auto flex items-center gap-5 whitespace-nowrap"
+          style={{ color: settings?.accentColor || "#fbbf24" }}
+        >
           <button
             type="button"
             onClick={onTrack}
-            className="font-bold hover:text-amber-100"
+            className="text-sm font-bold hover:text-amber-100"
           >
-            Track your order
+            {settings?.trackOrderText || "Track your order"}
           </button>
-          <div className="flex items-center gap-2">
-            <SocialIcon type="facebook" label="Facebook" />
-            <SocialIcon type="youtube" label="YouTube" />
-            <SocialIcon type="instagram" label="Instagram" />
+          <div className="flex items-center gap-2.5">
+            {settings?.followUsText && (
+              <span style={{ color: settings?.textColor || "#ffffff" }}>
+                {settings.followUsText}
+              </span>
+            )}
+            {socialLinks.map((item) => (
+              <a
+                key={`${item.platform}-${item.label}`}
+                href={item.url || undefined}
+                target={item.url ? "_blank" : undefined}
+                rel={item.url ? "noreferrer" : undefined}
+              >
+                <SocialIcon type={item.platform} label={item.label} />
+              </a>
+            ))}
           </div>
         </div>
       </div>
@@ -1749,21 +1838,30 @@ function ProductCard({ item, image }) {
 function Footer({ phone, settings, pages = [] }) {
   const general = settings?.general || {};
   const contact = settings?.contact || {};
-  const socialLinks = settings?.social?.length
-    ? settings.social
-    : [
-        { key: "facebook", label: "facebook", url: "" },
-        { key: "youtube", label: "youtube", url: "" },
-        { key: "tiktok", label: "tiktok", url: "" },
-        { key: "instagram", label: "instagram", url: "" },
-      ];
+  const footer = settings?.footer || {};
+  const hasDynamicFooter = Boolean(settings?.footer);
+  const socialLinks = footer.socialLinks?.length
+    ? footer.socialLinks.map((item) => ({
+        ...item,
+        key: item.platform || item.key,
+      }))
+    : settings?.social?.length
+      ? settings.social
+      : [
+          { key: "facebook", label: "facebook", url: "" },
+          { key: "youtube", label: "youtube", url: "" },
+          { key: "tiktok", label: "tiktok", url: "" },
+          { key: "instagram", label: "instagram", url: "" },
+        ];
   const siteName =
+    footer.companyName ||
     general.companyName ||
     general.websiteName ||
     general.siteName ||
     general.name ||
     "ওয়াজিহ";
   const logo =
+    footer.logoUrl ||
     general.logo ||
     general.logoUrl ||
     general.logoFile ||
@@ -1771,39 +1869,51 @@ function Footer({ phone, settings, pages = [] }) {
     general.whiteLogo ||
     "";
   const supportPhone =
+    footer.supportPhone ||
     contact.hotlineNumber ||
     contact.phoneNumber ||
     contact.phone ||
     contact.whatsappNumber ||
     phone;
   const address =
+    footer.address ||
     contact.address ||
     general.address ||
     "500/3 Khilgaon Niribili Society, Dhaka Bangladesh";
   const description =
+    footer.description ||
     general.footerText ||
     general.shortDescription ||
     general.metaDescription ||
     "Corporate and promotional gift item supplier in Bangladesh";
-  const quickLinks = [
+  const defaultQuickLinks = [
     {
       label: "Customer Support",
-      href: supportPhone ? `tel:${String(supportPhone).replace(/\s+/g, "")}` : "#",
+      href: supportPhone
+        ? `tel:${String(supportPhone).replace(/\s+/g, "")}`
+        : "#",
     },
     { label: "All Products", href: "#products" },
     { label: "Categories", href: "#categories" },
     { label: "Track My Order", href: "#track-order" },
   ];
-  const importantLinks = pages.length
-    ? pages.map((page) => ({
-        label: page.title || page.name || page.pageTitle || page.slug,
-        href: page.slug ? `/page/${page.slug}` : "#",
-      }))
-    : [{ label: "Refund Policy", href: "#" }];
+  const quickLinks = footer.quickLinks?.length
+    ? footer.quickLinks.map((link) => ({ ...link, href: link.url || "#" }))
+    : defaultQuickLinks;
+  const importantLinks = footer.importantLinks?.length
+    ? footer.importantLinks.map((link) => ({ ...link, href: link.url || "#" }))
+    : pages.length
+      ? pages.map((page) => ({
+          label: page.title || page.name || page.pageTitle || page.slug,
+          href: page.slug ? `/page/${page.slug}` : "#",
+        }))
+      : [{ label: "Refund Policy", href: "#" }];
+
+  if (hasDynamicFooter && footer.status === false) return null;
 
   return (
     <footer className="bg-[#20211f] text-slate-300">
-      <div className="mx-auto max-w-[1340px] px-4 py-12">
+      <div className="mx-auto  px-4 py-12">
         <div className="grid gap-10 md:grid-cols-[1.65fr_0.75fr_0.75fr_1fr]">
           <div>
             <div className="flex items-center gap-3 text-xl font-black text-white">
@@ -1821,7 +1931,7 @@ function Footer({ phone, settings, pages = [] }) {
               {siteName}
             </div>
             <p className="mt-7 text-md font-medium text-slate-400">
-              Customer Supports:
+              {footer.supportLabel || "Customer Supports:"}
             </p>
             <p className="mt-3 text-md font-black tracking-wide text-white">
               {supportPhone}
@@ -1834,10 +1944,15 @@ function Footer({ phone, settings, pages = [] }) {
             </p>
           </div>
 
-          <FooterLinks title="Quick Links" links={quickLinks} />
+          <FooterLinks
+            title={footer.quickLinksTitle || "Quick Links"}
+            links={quickLinks}
+          />
 
           <div>
-            <h3 className="text-xl font-black text-white">Follow Us</h3>
+            <h3 className="text-xl font-black text-white">
+              {footer.socialLinksTitle || "Follow Us"}
+            </h3>
             <ul className="mt-5 space-y-3 text-base font-semibold text-slate-500">
               {socialLinks.map((item) => (
                 <li
@@ -1863,7 +1978,9 @@ function Footer({ phone, settings, pages = [] }) {
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-white">Important Links</h3>
+            <h3 className="text-xl font-black text-white">
+              {footer.importantLinksTitle || "Important Links"}
+            </h3>
             <div className="mt-5 space-y-3">
               {importantLinks.map((link) => (
                 <a
@@ -1891,18 +2008,32 @@ function Footer({ phone, settings, pages = [] }) {
 
         <div className="mt-10 overflow-hidden rounded bg-white shadow-sm">
           <img
-            src={sslcommerzImage}
+            src={footer.paymentMethodsImageUrl || sslcommerzImage}
             alt="Available payment methods and SSLCommerz verification"
             className="w-full object-contain"
           />
         </div>
 
-        {/* <div className="mt-10 border-t border-white/10 pt-8">
-          <p className="text-center text-sm font-bold text-slate-500">
-            ওয়াজিহ © 2026. Develop by{" "}
-            <span className="text-sky-400">SOFT-HEXIS</span>
-          </p>
-        </div> */}
+        {(footer.copyrightText || footer.developerText) && (
+          <div className="mt-10 border-t border-white/10 pt-8">
+            <p className="text-center text-sm font-bold text-slate-500">
+              {footer.copyrightText}
+              {footer.copyrightText && footer.developerText ? " " : ""}
+              {footer.developerUrl ? (
+                <a
+                  href={footer.developerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sky-400"
+                >
+                  {footer.developerText}
+                </a>
+              ) : (
+                <span className="text-sky-400">{footer.developerText}</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
     </footer>
   );
@@ -1918,7 +2049,10 @@ function FooterLinks({ title, links }) {
             typeof link === "string" ? { label: link, href: "#" } : link;
           return (
             <li key={item.label}>
-              <a href={item.href || "#"} className="transition hover:text-white">
+              <a
+                href={item.href || "#"}
+                className="transition hover:text-white"
+              >
                 {item.label}
               </a>
             </li>
