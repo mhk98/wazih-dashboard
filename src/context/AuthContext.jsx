@@ -7,11 +7,12 @@ import {
   getRefreshToken,
   isTokenExpired,
   setTokens,
+  USER_STORAGE_KEYS,
 } from "../utils/apiClient";
 
 const AuthContext = createContext(null);
 
-const USER_KEY = "wazih_user";
+const USER_KEY = USER_STORAGE_KEYS.current;
 
 function loadStoredUser() {
   try {

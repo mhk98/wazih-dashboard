@@ -1,210 +1,226 @@
-import { useEffect, useState } from 'react';
-import './index.css';
-import { useAuth } from './context/AuthContext';
-import LoginPage from './pages/auth/LoginPage';
-import { useOrderStatusCounts } from './hooks/useOrders';
-import Sidebar from './components/Sidebar';
-import TopNav from './components/TopNav';
-import Dashboard from './components/Dashboard';
-import OrdersPage from './pages/OrdersPage';
-import CreateOrderPage from './pages/CreateOrderPage';
-import InvoicePage from './pages/InvoicePage';
-import EditOrderPage from './pages/EditOrderPage';
-import ProductManagePage from './pages/products/ProductManagePage';
-import CategoriesPage from './pages/products/CategoriesPage';
-import SubcategoriesPage from './pages/products/SubcategoriesPage';
-import ChildCategoriesPage from './pages/products/ChildCategoriesPage';
-import BrandsPage from './pages/products/BrandsPage';
-import ColorsPage from './pages/products/ColorsPage';
-import AttributePage from './pages/products/AttributePage';
-import AttributeFormPage from './pages/products/AttributeFormPage';
-import BarcodePage from './pages/products/BarcodePage';
-import ReviewsPage from './pages/products/ReviewsPage';
-import ReviewFormPage from './pages/products/ReviewFormPage';
-import ProductCreatePage from './pages/products/ProductCreatePage';
-import ProductEditPage from './pages/products/ProductEditPage';
-import CategoryCreatePage from './pages/products/CategoryCreatePage';
-import CategoryEditPage from './pages/products/CategoryEditPage';
-import SubcategoryCreatePage from './pages/products/SubcategoryCreatePage';
-import SubcategoryEditPage from './pages/products/SubcategoryEditPage';
-import ChildcategoryCreatePage from './pages/products/ChildcategoryCreatePage';
-import ChildcategoryEditPage from './pages/products/ChildcategoryEditPage';
-import BrandCreatePage from './pages/products/BrandCreatePage';
-import BrandEditPage from './pages/products/BrandEditPage';
-import ColorCreatePage from './pages/products/ColorCreatePage';
-import ColorEditPage from './pages/products/ColorEditPage';
-import PurchaseListPage from './pages/purchase/PurchaseListPage';
-import PurchaseFormPage from './pages/purchase/PurchaseFormPage';
-import SupplierListPage from './pages/supplier/SupplierListPage';
-import SupplierFormPage from './pages/supplier/SupplierFormPage';
-import PaymentAddPage from './pages/supplier/PaymentAddPage';
-import PaymentListPage from './pages/supplier/PaymentListPage';
-import { useSupplierAllList } from './hooks/useSuppliers';
-import AdminUserPage from './pages/admin/AdminUserPage';
-import AdminUserEditPage from './pages/admin/AdminUserEditPage';
-import AdminRolesPage from './pages/admin/AdminRolesPage';
-import AdminRoleEditPage from './pages/admin/AdminRoleEditPage';
-import AdminPermissionsPage from './pages/admin/AdminPermissionsPage';
-import CustomerListPage from './pages/customers/CustomerListPage';
-import CustomerEditPage from './pages/customers/CustomerEditPage';
-import CustomerViewPage from './pages/customers/CustomerViewPage';
-import CustomerLoginAsPage from './pages/customers/CustomerLoginAsPage';
-import CustomerIpBlockPage from './pages/customers/CustomerIpBlockPage';
-import LandingPageCreatePage from './pages/landing/LandingPageCreatePage';
-import LandingPageManagePage from './pages/landing/LandingPageManagePage';
-import LandingPageViewPage from './pages/landing/LandingPageViewPage';
-import LandingPageHeaderPage from './pages/landing/LandingPageHeaderPage';
-import LandingPageFooterPage from './pages/landing/LandingPageFooterPage';
-import { landingPageService } from './services/landingPageService';
-import WebsiteGeneralSettingPage from './pages/website/WebsiteGeneralSettingPage';
-import WebsiteSocialMediaPage from './pages/website/WebsiteSocialMediaPage';
-import WebsiteContactPage from './pages/website/WebsiteContactPage';
-import WebsiteShippingChargePage from './pages/website/WebsiteShippingChargePage';
-import WebsiteShippingChargeEditPage from './pages/website/WebsiteShippingChargeEditPage';
-import WebsiteOrderStatusPage from './pages/website/WebsiteOrderStatusPage';
-import WebsiteOrderStatusEditPage from './pages/website/WebsiteOrderStatusEditPage';
-import WebsitePageManagePage from './pages/website/WebsitePageManagePage';
-import WebsitePageEditPage from './pages/website/WebsitePageEditPage';
-import CourierApiPage from './pages/api/CourierApiPage';
-import PaymentGatewayPage from './pages/api/PaymentGatewayPage';
-import SmsGatewayPage from './pages/api/SmsGatewayPage';
-import FraudCheckerApiPage from './pages/api/FraudCheckerApiPage';
-import TagManagerPage from './pages/marketing/TagManagerPage';
-import TagManagerFormPage from './pages/marketing/TagManagerFormPage';
-import FacebookPixelsPage from './pages/marketing/FacebookPixelsPage';
-import FacebookPixelsFormPage from './pages/marketing/FacebookPixelsFormPage';
-import TiktokPixelsPage from './pages/marketing/TiktokPixelsPage';
-import TiktokPixelFormPage from './pages/marketing/TiktokPixelFormPage';
-import GoogleAdsPage from './pages/marketing/GoogleAdsPage';
-import GoogleAdsFormPage from './pages/marketing/GoogleAdsFormPage';
-import CouponCodePage from './pages/marketing/CouponCodePage';
-import CouponCodeFormPage from './pages/marketing/CouponCodeFormPage';
-import SmsMarketingPage from './pages/marketing/SmsMarketingPage';
-import FacebookCataloguePage from './pages/marketing/FacebookCataloguePage';
-import VisitorReportsPage from './pages/marketing/VisitorReportsPage';
-import BlogPage from './pages/blogs/BlogPage';
-import BlogFormPage from './pages/blogs/BlogFormPage';
-import BannerCategoryPage from './pages/banner/BannerCategoryPage';
-import BannerCategoryFormPage from './pages/banner/BannerCategoryFormPage';
-import BannerAdsPage from './pages/banner/BannerAdsPage';
-import BannerAdsFormPage from './pages/banner/BannerAdsFormPage';
-import { bannerAdsService, bannerCategoryService } from './services/bannerService';
-import ExpenseCategoryPage from './pages/expense/ExpenseCategoryPage';
-import ExpenseCategoryFormPage from './pages/expense/ExpenseCategoryFormPage';
-import ExpensePage from './pages/expense/ExpensePage';
-import ExpenseFormPage from './pages/expense/ExpenseFormPage';
-import ReportsPage from './pages/reports/ReportsPage';
-import { expenseService } from './services/reportService';
-import { siteSettingService } from './services/websiteService';
-import { applyDocumentFavicon, applyDocumentTitle, getFavicon, getSiteName, normalizeSettingData } from './utils/siteBranding';
+import { useEffect, useState } from "react";
+import "./index.css";
+import { useAuth } from "./context/AuthContext";
+import LoginPage from "./pages/auth/LoginPage";
+import { useOrderStatusCounts } from "./hooks/useOrders";
+import Sidebar from "./components/Sidebar";
+import TopNav from "./components/TopNav";
+import Dashboard from "./components/Dashboard";
+import OrdersPage from "./pages/OrdersPage";
+import CreateOrderPage from "./pages/CreateOrderPage";
+import InvoicePage from "./pages/InvoicePage";
+import EditOrderPage from "./pages/EditOrderPage";
+import ProductManagePage from "./pages/products/ProductManagePage";
+import CategoriesPage from "./pages/products/CategoriesPage";
+import SubcategoriesPage from "./pages/products/SubcategoriesPage";
+import ChildCategoriesPage from "./pages/products/ChildCategoriesPage";
+import BrandsPage from "./pages/products/BrandsPage";
+import ColorsPage from "./pages/products/ColorsPage";
+import AttributePage from "./pages/products/AttributePage";
+import AttributeFormPage from "./pages/products/AttributeFormPage";
+import BarcodePage from "./pages/products/BarcodePage";
+import ReviewsPage from "./pages/products/ReviewsPage";
+import ReviewFormPage from "./pages/products/ReviewFormPage";
+import ProductCreatePage from "./pages/products/ProductCreatePage";
+import ProductEditPage from "./pages/products/ProductEditPage";
+import CategoryCreatePage from "./pages/products/CategoryCreatePage";
+import CategoryEditPage from "./pages/products/CategoryEditPage";
+import SubcategoryCreatePage from "./pages/products/SubcategoryCreatePage";
+import SubcategoryEditPage from "./pages/products/SubcategoryEditPage";
+import ChildcategoryCreatePage from "./pages/products/ChildcategoryCreatePage";
+import ChildcategoryEditPage from "./pages/products/ChildcategoryEditPage";
+import BrandCreatePage from "./pages/products/BrandCreatePage";
+import BrandEditPage from "./pages/products/BrandEditPage";
+import ColorCreatePage from "./pages/products/ColorCreatePage";
+import ColorEditPage from "./pages/products/ColorEditPage";
+import PurchaseListPage from "./pages/purchase/PurchaseListPage";
+import PurchaseFormPage from "./pages/purchase/PurchaseFormPage";
+import SupplierListPage from "./pages/supplier/SupplierListPage";
+import SupplierFormPage from "./pages/supplier/SupplierFormPage";
+import PaymentAddPage from "./pages/supplier/PaymentAddPage";
+import PaymentListPage from "./pages/supplier/PaymentListPage";
+import { useSupplierAllList } from "./hooks/useSuppliers";
+import AdminUserPage from "./pages/admin/AdminUserPage";
+import AdminUserEditPage from "./pages/admin/AdminUserEditPage";
+import AdminRolesPage from "./pages/admin/AdminRolesPage";
+import AdminRoleEditPage from "./pages/admin/AdminRoleEditPage";
+import AdminPermissionsPage from "./pages/admin/AdminPermissionsPage";
+import CustomerListPage from "./pages/customers/CustomerListPage";
+import CustomerEditPage from "./pages/customers/CustomerEditPage";
+import CustomerViewPage from "./pages/customers/CustomerViewPage";
+import CustomerLoginAsPage from "./pages/customers/CustomerLoginAsPage";
+import CustomerIpBlockPage from "./pages/customers/CustomerIpBlockPage";
+import LandingPageCreatePage from "./pages/landing/LandingPageCreatePage";
+import LandingPageManagePage from "./pages/landing/LandingPageManagePage";
+import LandingPageViewPage from "./pages/landing/LandingPageViewPage";
+import LandingPageHeaderPage from "./pages/landing/LandingPageHeaderPage";
+import LandingPageFooterPage from "./pages/landing/LandingPageFooterPage";
+import { landingPageService } from "./services/landingPageService";
+import WebsiteGeneralSettingPage from "./pages/website/WebsiteGeneralSettingPage";
+import WebsiteSocialMediaPage from "./pages/website/WebsiteSocialMediaPage";
+import WebsiteContactPage from "./pages/website/WebsiteContactPage";
+import WebsiteShippingChargePage from "./pages/website/WebsiteShippingChargePage";
+import WebsiteShippingChargeEditPage from "./pages/website/WebsiteShippingChargeEditPage";
+import WebsiteOrderStatusPage from "./pages/website/WebsiteOrderStatusPage";
+import WebsiteOrderStatusEditPage from "./pages/website/WebsiteOrderStatusEditPage";
+import WebsitePageManagePage from "./pages/website/WebsitePageManagePage";
+import WebsitePageEditPage from "./pages/website/WebsitePageEditPage";
+import CourierApiPage from "./pages/api/CourierApiPage";
+import PaymentGatewayPage from "./pages/api/PaymentGatewayPage";
+import SmsGatewayPage from "./pages/api/SmsGatewayPage";
+import FraudCheckerApiPage from "./pages/api/FraudCheckerApiPage";
+import TagManagerPage from "./pages/marketing/TagManagerPage";
+import TagManagerFormPage from "./pages/marketing/TagManagerFormPage";
+import FacebookPixelsPage from "./pages/marketing/FacebookPixelsPage";
+import FacebookPixelsFormPage from "./pages/marketing/FacebookPixelsFormPage";
+import TiktokPixelsPage from "./pages/marketing/TiktokPixelsPage";
+import TiktokPixelFormPage from "./pages/marketing/TiktokPixelFormPage";
+import GoogleAdsPage from "./pages/marketing/GoogleAdsPage";
+import GoogleAdsFormPage from "./pages/marketing/GoogleAdsFormPage";
+import CouponCodePage from "./pages/marketing/CouponCodePage";
+import CouponCodeFormPage from "./pages/marketing/CouponCodeFormPage";
+import SmsMarketingPage from "./pages/marketing/SmsMarketingPage";
+import FacebookCataloguePage from "./pages/marketing/FacebookCataloguePage";
+import VisitorReportsPage from "./pages/marketing/VisitorReportsPage";
+import BlogPage from "./pages/blogs/BlogPage";
+import BlogFormPage from "./pages/blogs/BlogFormPage";
+import BannerCategoryPage from "./pages/banner/BannerCategoryPage";
+import BannerCategoryFormPage from "./pages/banner/BannerCategoryFormPage";
+import BannerAdsPage from "./pages/banner/BannerAdsPage";
+import BannerAdsFormPage from "./pages/banner/BannerAdsFormPage";
+import {
+  bannerAdsService,
+  bannerCategoryService,
+} from "./services/bannerService";
+import ExpenseCategoryPage from "./pages/expense/ExpenseCategoryPage";
+import ExpenseCategoryFormPage from "./pages/expense/ExpenseCategoryFormPage";
+import ExpensePage from "./pages/expense/ExpensePage";
+import ExpenseFormPage from "./pages/expense/ExpenseFormPage";
+import ReportsPage from "./pages/reports/ReportsPage";
+import { expenseService } from "./services/reportService";
+import { siteSettingService } from "./services/websiteService";
+import {
+  applyDocumentFavicon,
+  applyDocumentTitle,
+  assetSrc,
+  getFavicon,
+  getSiteName,
+  normalizeSettingData,
+} from "./utils/siteBranding";
 
 function getDirectLandingPageId() {
-  if (typeof window === 'undefined') return '';
+  if (typeof window === "undefined") return "";
   const params = new URLSearchParams(window.location.search);
-  const queryId = params.get('landingPageId');
+  const queryId = params.get("landingPageId");
   if (queryId) return queryId;
   const match = window.location.pathname.match(/^\/landing-page\/([^/]+)$/);
-  return match?.[1] || '';
+  return match?.[1] || "";
 }
 
-const DASHBOARD_NAV_STORAGE_KEY = 'wazih-dashboard:navigation';
+const DASHBOARD_NAV_STORAGE_KEY = "homzify-dashboard:navigation";
 
 const DEFAULT_NAVIGATION = {
-  activePage: 'dashboard',
-  activeOrderStatus: 'all',
-  activeProductPage: 'product_manage',
-  activeSupplierPage: 'supplier_list',
-  activePurchasePage: 'purchase_list',
-  activeLandingPage: 'landing_create',
-  activeAdminPage: 'admin_user',
-  activeCustomersPage: 'customer_list',
-  activeWebsitePage: 'general_setting',
-  activeApiPage: 'courier_api',
-  activeMarketingPage: 'tag_manager',
-  activeBlogsPage: 'blog',
-  activeBannerPage: 'banner_category',
-  activeExpensePage: 'expense_categories',
-  activeReportsPage: 'stock_report',
+  activePage: "dashboard",
+  activeOrderStatus: "all",
+  activeProductPage: "product_manage",
+  activeSupplierPage: "supplier_list",
+  activePurchasePage: "purchase_list",
+  activeLandingPage: "landing_create",
+  activeAdminPage: "admin_user",
+  activeCustomersPage: "customer_list",
+  activeWebsitePage: "general_setting",
+  activeApiPage: "courier_api",
+  activeMarketingPage: "tag_manager",
+  activeBlogsPage: "blog",
+  activeBannerPage: "banner_category",
+  activeExpensePage: "expense_categories",
+  activeReportsPage: "stock_report",
 };
 
 const PERSISTABLE_PAGES = new Set([
-  'dashboard',
-  'orders',
-  'create_order',
-  'products',
-  'create_product',
-  'create_category',
-  'create_subcategory',
-  'create_childcategory',
-  'create_brand',
-  'create_color',
-  'create_attribute',
-  'create_review',
-  'supplier',
-  'purchase',
-  'landing',
-  'admin',
-  'customers',
-  'website',
-  'api',
-  'marketing',
-  'blogs',
-  'banner',
-  'expense',
-  'reports',
+  "dashboard",
+  "orders",
+  "create_order",
+  "products",
+  "create_product",
+  "create_category",
+  "create_subcategory",
+  "create_childcategory",
+  "create_brand",
+  "create_color",
+  "create_attribute",
+  "create_review",
+  "supplier",
+  "purchase",
+  "landing",
+  "admin",
+  "customers",
+  "website",
+  "api",
+  "marketing",
+  "blogs",
+  "banner",
+  "expense",
+  "reports",
 ]);
 
 const TRANSIENT_PAGE_FALLBACKS = {
-  invoice: { activePage: 'orders', activeOrderStatus: 'all' },
-  edit_order: { activePage: 'orders', activeOrderStatus: 'all' },
-  edit_product: { activePage: 'products', activeProductPage: 'product_manage' },
-  edit_category: { activePage: 'products', activeProductPage: 'categories' },
-  edit_subcategory: { activePage: 'products', activeProductPage: 'subcategories' },
-  edit_childcategory: { activePage: 'products', activeProductPage: 'childcategories' },
-  edit_brand: { activePage: 'products', activeProductPage: 'brands' },
-  edit_color: { activePage: 'products', activeProductPage: 'colors' },
-  edit_attribute: { activePage: 'products', activeProductPage: 'attribute' },
-  edit_review: { activePage: 'products', activeProductPage: 'reviews' },
+  invoice: { activePage: "orders", activeOrderStatus: "all" },
+  edit_order: { activePage: "orders", activeOrderStatus: "all" },
+  edit_product: { activePage: "products", activeProductPage: "product_manage" },
+  edit_category: { activePage: "products", activeProductPage: "categories" },
+  edit_subcategory: {
+    activePage: "products",
+    activeProductPage: "subcategories",
+  },
+  edit_childcategory: {
+    activePage: "products",
+    activeProductPage: "childcategories",
+  },
+  edit_brand: { activePage: "products", activeProductPage: "brands" },
+  edit_color: { activePage: "products", activeProductPage: "colors" },
+  edit_attribute: { activePage: "products", activeProductPage: "attribute" },
+  edit_review: { activePage: "products", activeProductPage: "reviews" },
 };
 
 const TRANSIENT_SUBPAGE_FALLBACKS = {
   activeSupplierPage: {
-    supplier_edit: 'supplier_list',
-    payment_edit: 'payment_list',
+    supplier_edit: "supplier_list",
+    payment_edit: "payment_list",
   },
   activePurchasePage: {
-    purchase_edit: 'purchase_list',
+    purchase_edit: "purchase_list",
   },
   activeLandingPage: {
-    landing_edit: 'landing_manage',
-    landing_view: 'landing_manage',
+    landing_edit: "landing_manage",
+    landing_view: "landing_manage",
   },
   activeAdminPage: {
-    admin_user_edit: 'admin_user',
-    admin_role_edit: 'admin_roles',
+    admin_user_edit: "admin_user",
+    admin_role_edit: "admin_roles",
   },
   activeCustomersPage: {
-    customer_edit: 'customer_list',
-    customer_view: 'customer_list',
-    customer_login_as: 'customer_list',
+    customer_edit: "customer_list",
+    customer_view: "customer_list",
+    customer_login_as: "customer_list",
   },
   activeMarketingPage: {
-    tag_manager_edit: 'tag_manager',
-    facebook_pixels_edit: 'facebook_pixels',
-    tiktok_pixels_edit: 'tiktok_pixels',
-    google_ads_edit: 'google_ads',
-    coupon_code_edit: 'coupon_code',
+    tag_manager_edit: "tag_manager",
+    facebook_pixels_edit: "facebook_pixels",
+    tiktok_pixels_edit: "tiktok_pixels",
+    google_ads_edit: "google_ads",
+    coupon_code_edit: "coupon_code",
   },
   activeBlogsPage: {
-    blog_edit: 'blog',
+    blog_edit: "blog",
   },
   activeBannerPage: {
-    banner_category_edit: 'banner_category',
-    banner_ads_edit: 'banner_ads',
+    banner_category_edit: "banner_category",
+    banner_ads_edit: "banner_ads",
   },
   activeExpensePage: {
-    expense_category_edit: 'expense_categories',
-    expense_edit: 'expense',
+    expense_category_edit: "expense_categories",
+    expense_edit: "expense",
   },
 };
 
@@ -221,35 +237,70 @@ function normalizeNavigationState(state = {}) {
 }
 
 function getHashNavigationState() {
-  if (typeof window === 'undefined') return null;
-  const hash = window.location.hash.replace(/^#/, '');
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace(/^#/, "");
+  return getNavigationStateFromHash(hash);
+}
+
+function getNavigationStateFromHash(hash) {
   if (!hash) return null;
   const params = new URLSearchParams(hash);
-  if (!params.has('page')) return null;
+  if (!params.has("page")) return null;
 
   return normalizeNavigationState({
-    activePage: params.get('page') || DEFAULT_NAVIGATION.activePage,
-    activeOrderStatus: params.get('orderStatus') || DEFAULT_NAVIGATION.activeOrderStatus,
-    activeProductPage: params.get('productPage') || DEFAULT_NAVIGATION.activeProductPage,
-    activeSupplierPage: params.get('supplierPage') || DEFAULT_NAVIGATION.activeSupplierPage,
-    activePurchasePage: params.get('purchasePage') || DEFAULT_NAVIGATION.activePurchasePage,
-    activeLandingPage: params.get('landingPage') || DEFAULT_NAVIGATION.activeLandingPage,
-    activeAdminPage: params.get('adminPage') || DEFAULT_NAVIGATION.activeAdminPage,
-    activeCustomersPage: params.get('customersPage') || DEFAULT_NAVIGATION.activeCustomersPage,
-    activeWebsitePage: params.get('websitePage') || DEFAULT_NAVIGATION.activeWebsitePage,
-    activeApiPage: params.get('apiPage') || DEFAULT_NAVIGATION.activeApiPage,
-    activeMarketingPage: params.get('marketingPage') || DEFAULT_NAVIGATION.activeMarketingPage,
-    activeBlogsPage: params.get('blogsPage') || DEFAULT_NAVIGATION.activeBlogsPage,
-    activeBannerPage: params.get('bannerPage') || DEFAULT_NAVIGATION.activeBannerPage,
-    activeExpensePage: params.get('expensePage') || DEFAULT_NAVIGATION.activeExpensePage,
-    activeReportsPage: params.get('reportsPage') || DEFAULT_NAVIGATION.activeReportsPage,
+    activePage: params.get("page") || DEFAULT_NAVIGATION.activePage,
+    activeOrderStatus:
+      params.get("orderStatus") || DEFAULT_NAVIGATION.activeOrderStatus,
+    activeProductPage:
+      params.get("productPage") || DEFAULT_NAVIGATION.activeProductPage,
+    activeSupplierPage:
+      params.get("supplierPage") || DEFAULT_NAVIGATION.activeSupplierPage,
+    activePurchasePage:
+      params.get("purchasePage") || DEFAULT_NAVIGATION.activePurchasePage,
+    activeLandingPage:
+      params.get("landingPage") || DEFAULT_NAVIGATION.activeLandingPage,
+    activeAdminPage:
+      params.get("adminPage") || DEFAULT_NAVIGATION.activeAdminPage,
+    activeCustomersPage:
+      params.get("customersPage") || DEFAULT_NAVIGATION.activeCustomersPage,
+    activeWebsitePage:
+      params.get("websitePage") || DEFAULT_NAVIGATION.activeWebsitePage,
+    activeApiPage: params.get("apiPage") || DEFAULT_NAVIGATION.activeApiPage,
+    activeMarketingPage:
+      params.get("marketingPage") || DEFAULT_NAVIGATION.activeMarketingPage,
+    activeBlogsPage:
+      params.get("blogsPage") || DEFAULT_NAVIGATION.activeBlogsPage,
+    activeBannerPage:
+      params.get("bannerPage") || DEFAULT_NAVIGATION.activeBannerPage,
+    activeExpensePage:
+      params.get("expensePage") || DEFAULT_NAVIGATION.activeExpensePage,
+    activeReportsPage:
+      params.get("reportsPage") || DEFAULT_NAVIGATION.activeReportsPage,
   });
 }
 
-function getStoredNavigationState() {
-  if (typeof window === 'undefined') return null;
+function getNavigationStateFromUrl(url) {
+  if (!url || typeof window === "undefined") return null;
   try {
-    const parsed = JSON.parse(localStorage.getItem(DASHBOARD_NAV_STORAGE_KEY) || 'null');
+    const value = String(url);
+    if (value.startsWith("/#"))
+      return getNavigationStateFromHash(value.slice(2));
+    if (value.startsWith("#"))
+      return getNavigationStateFromHash(value.slice(1));
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    return getNavigationStateFromHash(parsed.hash.replace(/^#/, ""));
+  } catch {
+    return null;
+  }
+}
+
+function getStoredNavigationState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem(DASHBOARD_NAV_STORAGE_KEY) || "null",
+    );
     return parsed ? normalizeNavigationState(parsed) : null;
   } catch {
     return null;
@@ -258,63 +309,76 @@ function getStoredNavigationState() {
 
 function getInitialNavigationState() {
   if (getDirectLandingPageId()) return DEFAULT_NAVIGATION;
-  return getHashNavigationState() || getStoredNavigationState() || DEFAULT_NAVIGATION;
+  return (
+    getHashNavigationState() || getStoredNavigationState() || DEFAULT_NAVIGATION
+  );
 }
 
 function writeNavigationState(state) {
-  if (typeof window === 'undefined' || getDirectLandingPageId()) return;
+  if (typeof window === "undefined" || getDirectLandingPageId()) return;
   const normalized = normalizeNavigationState(state);
   try {
     localStorage.setItem(DASHBOARD_NAV_STORAGE_KEY, JSON.stringify(normalized));
   } catch {
-    // Ignore storage failures; the URL hash still preserves the current section.
+    // Ignore storage failures.
   }
 
-  const params = new URLSearchParams({
-    page: normalized.activePage,
-    orderStatus: normalized.activeOrderStatus,
-    productPage: normalized.activeProductPage,
-    supplierPage: normalized.activeSupplierPage,
-    purchasePage: normalized.activePurchasePage,
-    landingPage: normalized.activeLandingPage,
-    adminPage: normalized.activeAdminPage,
-    customersPage: normalized.activeCustomersPage,
-    websitePage: normalized.activeWebsitePage,
-    apiPage: normalized.activeApiPage,
-    marketingPage: normalized.activeMarketingPage,
-    blogsPage: normalized.activeBlogsPage,
-    bannerPage: normalized.activeBannerPage,
-    expensePage: normalized.activeExpensePage,
-    reportsPage: normalized.activeReportsPage,
-  });
-
-  const nextUrl = `${window.location.pathname}${window.location.search}#${params.toString()}`;
-  if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== nextUrl) {
-    window.history.replaceState(null, '', nextUrl);
-  }
+  // Do not update the browser URL for every navigation change.
+  // This keeps the address bar clean and avoids long hash strings.
 }
 
 function normalizeBannerCategory(item) {
   return {
     id: item.Id ?? item.id,
-    name: item.name ?? '',
-    status: item.status === true || item.status === 'Active',
+    name: item.name ?? "",
+    status: item.status === true || item.status === "Active",
     sortOrder: item.sortOrder ?? null,
   };
 }
 
 function normalizeBanner(item) {
-  const category = item.category?.name || item.categoryName || item.category || '';
+  const category =
+    item.category?.name || item.categoryName || item.category || "";
+  const rawImageName =
+    item.file ??
+    item.imageName ??
+    item.image ??
+    item.imageUrl ??
+    item.bannerImageUrl ??
+    "";
+  const imageName = String(rawImageName || "");
   return {
     id: item.Id ?? item.id,
-    link: item.linkUrl ?? item.link ?? '',
-    categoryId: item.categoryId ?? item.category?.Id ?? '',
+    link: item.linkUrl ?? item.link ?? "",
+    categoryId: item.categoryId ?? item.category?.Id ?? "",
     category,
-    imageName: item.file ?? item.imageName ?? '',
+    imageName,
+    imageSrc: assetSrc(imageName),
+    isDynamic: Boolean(imageName),
     imageText: item.alt ?? item.imageText ?? category,
-    imageColor: item.imageColor ?? 'linear-gradient(135deg, #94a3b8, #475569)',
-    status: item.status === true || item.status === 'Active',
+    imageColor: item.imageColor ?? "linear-gradient(135deg, #94a3b8, #475569)",
+    status: item.status === true || item.status === "Active",
     sortOrder: item.sortOrder ?? null,
+  };
+}
+
+async function fetchBannerState() {
+  const [categoryRes, bannerRes] = await Promise.all([
+    bannerCategoryService.getAll({
+      limit: 100,
+      sortBy: "sortOrder",
+      sortOrder: "ASC",
+    }),
+    bannerAdsService.getAll({
+      limit: 100,
+      sortBy: "sortOrder",
+      sortOrder: "ASC",
+    }),
+  ]);
+
+  return {
+    categories: (categoryRes.data || []).map(normalizeBannerCategory),
+    banners: (bannerRes.data || []).map(normalizeBanner),
   };
 }
 
@@ -325,29 +389,58 @@ function App() {
 
   // All hooks must be called unconditionally (Rules of Hooks).
   // They silently return empty data when there is no auth token.
-  const { counts: orderCounts, refetch: refetchOrderCounts } = useOrderStatusCounts(isAuthenticated);
+  const { counts: orderCounts, refetch: refetchOrderCounts } =
+    useOrderStatusCounts(isAuthenticated);
   const [activePage, setActivePage] = useState(initialNavigation.activePage);
-  const [activeOrderStatus, setActiveOrderStatus] = useState(initialNavigation.activeOrderStatus);
-  const [activeProductPage, setActiveProductPage] = useState(initialNavigation.activeProductPage);
-  const [activeSupplierPage, setActiveSupplierPage] = useState(initialNavigation.activeSupplierPage);
-  const [activePurchasePage, setActivePurchasePage] = useState(initialNavigation.activePurchasePage);
+  const [activeOrderStatus, setActiveOrderStatus] = useState(
+    initialNavigation.activeOrderStatus,
+  );
+  const [activeProductPage, setActiveProductPage] = useState(
+    initialNavigation.activeProductPage,
+  );
+  const [activeSupplierPage, setActiveSupplierPage] = useState(
+    initialNavigation.activeSupplierPage,
+  );
+  const [activePurchasePage, setActivePurchasePage] = useState(
+    initialNavigation.activePurchasePage,
+  );
   const [selectedPurchase, setSelectedPurchase] = useState(null);
-  const [activeLandingPage, setActiveLandingPage] = useState(initialNavigation.activeLandingPage);
-  const [activeAdminPage, setActiveAdminPage] = useState(initialNavigation.activeAdminPage);
-  const [activeCustomersPage, setActiveCustomersPage] = useState(initialNavigation.activeCustomersPage);
-  const [activeWebsitePage, setActiveWebsitePage] = useState(initialNavigation.activeWebsitePage);
-  const [activeApiPage, setActiveApiPage] = useState(initialNavigation.activeApiPage);
-  const [activeMarketingPage, setActiveMarketingPage] = useState(initialNavigation.activeMarketingPage);
-  const [activeBlogsPage, setActiveBlogsPage] = useState(initialNavigation.activeBlogsPage);
-  const [activeBannerPage, setActiveBannerPage] = useState(initialNavigation.activeBannerPage);
-  const [activeExpensePage, setActiveExpensePage] = useState(initialNavigation.activeExpensePage);
-  const [activeReportsPage, setActiveReportsPage] = useState(initialNavigation.activeReportsPage);
+  const [activeLandingPage, setActiveLandingPage] = useState(
+    initialNavigation.activeLandingPage,
+  );
+  const [activeAdminPage, setActiveAdminPage] = useState(
+    initialNavigation.activeAdminPage,
+  );
+  const [activeCustomersPage, setActiveCustomersPage] = useState(
+    initialNavigation.activeCustomersPage,
+  );
+  const [activeWebsitePage, setActiveWebsitePage] = useState(
+    initialNavigation.activeWebsitePage,
+  );
+  const [activeApiPage, setActiveApiPage] = useState(
+    initialNavigation.activeApiPage,
+  );
+  const [activeMarketingPage, setActiveMarketingPage] = useState(
+    initialNavigation.activeMarketingPage,
+  );
+  const [activeBlogsPage, setActiveBlogsPage] = useState(
+    initialNavigation.activeBlogsPage,
+  );
+  const [activeBannerPage, setActiveBannerPage] = useState(
+    initialNavigation.activeBannerPage,
+  );
+  const [activeExpensePage, setActiveExpensePage] = useState(
+    initialNavigation.activeExpensePage,
+  );
+  const [activeReportsPage, setActiveReportsPage] = useState(
+    initialNavigation.activeReportsPage,
+  );
   const [siteSettings, setSiteSettings] = useState(null);
   const { data: suppliers } = useSupplierAllList();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedProduct, setSelectedProduct]   = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [selectedChildcategory, setSelectedChildcategory] = useState(null);
@@ -366,68 +459,101 @@ function App() {
   const [tagManagers, setTagManagers] = useState([]);
   const [selectedTagManager, setSelectedTagManager] = useState(null);
   const [facebookPixels, setFacebookPixels] = useState([
-    { id: 1, pixelsId: '645044913541888', metaAccessToken: '', testEventId: '', status: false },
+    {
+      id: 1,
+      pixelsId: "645044913541888",
+      metaAccessToken: "",
+      testEventId: "",
+      status: false,
+    },
   ]);
   const [selectedFacebookPixel, setSelectedFacebookPixel] = useState(null);
   const [selectedTiktokPixel, setSelectedTiktokPixel] = useState(null);
   const [selectedGoogleAds, setSelectedGoogleAds] = useState(null);
   const [couponCodes, setCouponCodes] = useState([
-    { id: 1, code: 'winter11.11', date: '2026-01-20', type: 'Percentage', amount: 11, buyAmount: 800, imageName: '', status: true },
-    { id: 2, code: 'offer10', date: '2026-04-30', type: 'Percentage', amount: 12, buyAmount: 1000, imageName: '', status: true },
+    {
+      id: 1,
+      code: "winter11.11",
+      date: "2026-01-20",
+      type: "Percentage",
+      amount: 11,
+      buyAmount: 800,
+      imageName: "",
+      status: true,
+    },
+    {
+      id: 2,
+      code: "offer10",
+      date: "2026-04-30",
+      type: "Percentage",
+      amount: 12,
+      buyAmount: 1000,
+      imageName: "",
+      status: true,
+    },
   ]);
   const [selectedCouponCode, setSelectedCouponCode] = useState(null);
   const [blogs, setBlogs] = useState([
     {
       id: 1,
-      title: '৫০০ টাকার মধ্যে পুরুষ ব্যবহারর সেরা ৫টি সানস্ক্রিন...',
-      imageName: '',
-      imageText: '20,000 ROI',
-      imageColor: 'linear-gradient(135deg, #f2d3a4, #a4572c)',
-      description: '',
+      title: "৫০০ টাকার মধ্যে পুরুষ ব্যবহারর সেরা ৫টি সানস্ক্রিন...",
+      imageName: "",
+      imageText: "20,000 ROI",
+      imageColor: "linear-gradient(135deg, #f2d3a4, #a4572c)",
+      description: "",
       status: false,
     },
     {
       id: 2,
-      title: 'এ আঘা খাবার ৪টি কারণ',
-      imageName: '',
-      imageText: 'WAZIH',
-      imageColor: 'linear-gradient(135deg, #0f172a, #4b6b8a)',
-      description: '',
+      title: "এ আঘা খাবার ৪টি কারণ",
+      imageName: "",
+      imageText: "Wazih Commerce",
+      imageColor: "linear-gradient(135deg, #0f172a, #4b6b8a)",
+      description: "",
       status: false,
     },
   ]);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [bannerCategories, setBannerCategories] = useState([
-    { id: 1, name: 'Nazmul Hasan', status: true },
-    { id: 2, name: 'Welcome to Sellpixer', status: true },
-    { id: 3, name: 'Popup Banner', status: true },
-    { id: 4, name: 'Slider Right (375px X 175px)', status: true },
-    { id: 5, name: 'Main Slider (775px x 400px)', status: true },
+    { id: 1, name: "Nazmul Hasan", status: true },
+    { id: 2, name: "Welcome to Sellpixer", status: true },
   ]);
   const [selectedBannerCategory, setSelectedBannerCategory] = useState(null);
-  const [banners, setBanners] = useState([
-    { id: 1, link: '', category: 'Main Slider (775px x 400px)', imageName: '', imageText: 'Arabic', imageColor: 'linear-gradient(135deg, #d6d3d1, #78716c)', status: true },
-    { id: 2, link: '', category: 'Slider Right (375px X 175px)', imageName: '', imageText: 'City', imageColor: 'linear-gradient(135deg, #ecfccb, #84cc16)', status: true },
-    { id: 3, link: '', category: 'Popup Banner', imageName: '', imageText: 'Offer', imageColor: 'linear-gradient(135deg, #fbbf24, #7f1d1d)', status: false },
-    { id: 4, link: '', category: 'Main Slider (775px x 400px)', imageName: '', imageText: 'Room', imageColor: 'linear-gradient(135deg, #f8fafc, #94a3b8)', status: true },
-    { id: 5, link: '', category: 'Slider Right (375px X 175px)', imageName: '', imageText: 'Gadgets', imageColor: 'linear-gradient(135deg, #bef264, #16a34a)', status: true },
-    { id: 6, link: '', category: 'Main Slider (775px x 400px)', imageName: '', imageText: 'Tower', imageColor: 'linear-gradient(135deg, #bae6fd, #334155)', status: true },
-  ]);
+  const [banners, setBanners] = useState([]);
   const [selectedBanner, setSelectedBanner] = useState(null);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [selectedExpenseCategory, setSelectedExpenseCategory] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [directCampaign, setDirectCampaign] = useState(null);
-  const [directCampaignLoading, setDirectCampaignLoading] = useState(Boolean(directLandingPageId));
-  const [directCampaignError, setDirectCampaignError] = useState('');
+  const [directCampaignLoading, setDirectCampaignLoading] = useState(
+    Boolean(directLandingPageId),
+  );
+  const [directCampaignError, setDirectCampaignError] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) return;
     Promise.all([expenseService.getCategories(), expenseService.getAll()])
       .then(([categoryResponse, expenseResponse]) => {
-        setExpenseCategories((categoryResponse.data || []).map((item) => ({ id: item.Id, name: item.name, status: item.status === 'Active' })));
-        setExpenses((expenseResponse.data || []).map((item) => ({ id: item.Id, title: item.title, category: item.categoryName || '', categoryId: item.categoryId, date: item.date, amount: Number(item.amount || 0), note: item.note || '', status: item.status === 'Active' })));
+        setExpenseCategories(
+          (categoryResponse.data || []).map((item) => ({
+            id: item.Id,
+            name: item.name,
+            status: item.status === "Active",
+          })),
+        );
+        setExpenses(
+          (expenseResponse.data || []).map((item) => ({
+            id: item.Id,
+            title: item.title,
+            category: item.categoryName || "",
+            categoryId: item.categoryId,
+            date: item.date,
+            amount: Number(item.amount || 0),
+            note: item.note || "",
+            status: item.status === "Active",
+          })),
+        );
       })
       .catch(() => {});
   }, [isAuthenticated]);
@@ -479,15 +605,16 @@ function App() {
       applyDocumentTitle(getSiteName(normalized));
     };
 
-    siteSettingService.get('general')
+    siteSettingService
+      .get("general")
       .then((res) => applySettings(res.data?.data || null))
       .catch(() => {});
 
     const handleUpdate = (event) => applySettings(event.detail);
-    window.addEventListener('site-settings:update', handleUpdate);
+    window.addEventListener("site-settings:update", handleUpdate);
     return () => {
       active = false;
-      window.removeEventListener('site-settings:update', handleUpdate);
+      window.removeEventListener("site-settings:update", handleUpdate);
     };
   }, [isAuthenticated]);
 
@@ -495,17 +622,14 @@ function App() {
     if (!isAuthenticated) return undefined;
     let active = true;
 
-    Promise.all([
-      bannerCategoryService.getAll({ limit: 100, sortBy: 'sortOrder', sortOrder: 'ASC' }),
-      bannerAdsService.getAll({ limit: 100, sortBy: 'sortOrder', sortOrder: 'ASC' }),
-    ])
-      .then(([categoryRes, bannerRes]) => {
+    fetchBannerState()
+      .then(({ categories, banners }) => {
         if (!active) return;
-        setBannerCategories((categoryRes.data || []).map(normalizeBannerCategory));
-        setBanners((bannerRes.data || []).map(normalizeBanner));
+        setBannerCategories(categories);
+        setBanners(banners);
       })
       .catch((err) => {
-        console.error('Banner data fetch failed', err);
+        console.error("Banner data fetch failed", err);
       });
 
     return () => {
@@ -517,15 +641,16 @@ function App() {
     if (!directLandingPageId || !isAuthenticated) return undefined;
     let active = true;
     setDirectCampaignLoading(true);
-    setDirectCampaignError('');
-    landingPageService.getOne(directLandingPageId)
+    setDirectCampaignError("");
+    landingPageService
+      .getOne(directLandingPageId)
       .then((res) => {
         if (!active) return;
         setDirectCampaign(res.data || null);
       })
       .catch((err) => {
         if (!active) return;
-        setDirectCampaignError(err.message || 'Landing page fetch failed.');
+        setDirectCampaignError(err.message || "Landing page fetch failed.");
       })
       .finally(() => {
         if (active) setDirectCampaignLoading(false);
@@ -540,9 +665,24 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin h-8 w-8 text-orange-500" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          <svg
+            className="animate-spin h-8 w-8 text-orange-500"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8H4z"
+            />
           </svg>
           <p className="text-sm text-gray-500">Loading...</p>
         </div>
@@ -567,10 +707,12 @@ function App() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
           <div className="rounded-lg border border-red-100 bg-white p-6 text-center shadow-sm">
-            <p className="text-sm font-bold text-red-500">{directCampaignError || 'Landing page not found.'}</p>
+            <p className="text-sm font-bold text-red-500">
+              {directCampaignError || "Landing page not found."}
+            </p>
             <button
               type="button"
-              onClick={() => window.location.assign('/')}
+              onClick={() => window.location.assign("/")}
               className="mt-4 rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white"
             >
               Back to Dashboard
@@ -584,20 +726,22 @@ function App() {
       <div className="flex min-h-screen overflow-hidden bg-gray-100">
         <LandingPageViewPage
           campaign={directCampaign}
-          onBack={() => window.location.assign('/')}
+          onBack={() => window.location.assign("/")}
         />
       </div>
     );
   }
 
   function goProducts(page) {
-    setActivePage('products');
+    setActivePage("products");
     setActiveProductPage(page);
   }
 
   function saveTagManager(data) {
     if (data.id) {
-      setTagManagers((prev) => prev.map((tag) => tag.id === data.id ? { ...tag, ...data } : tag));
+      setTagManagers((prev) =>
+        prev.map((tag) => (tag.id === data.id ? { ...tag, ...data } : tag)),
+      );
       setSelectedTagManager(null);
       return;
     }
@@ -618,7 +762,11 @@ function App() {
 
   function saveFacebookPixel(data) {
     if (data.id) {
-      setFacebookPixels((prev) => prev.map((pixel) => pixel.id === data.id ? { ...pixel, ...data } : pixel));
+      setFacebookPixels((prev) =>
+        prev.map((pixel) =>
+          pixel.id === data.id ? { ...pixel, ...data } : pixel,
+        ),
+      );
       setSelectedFacebookPixel(null);
       return;
     }
@@ -641,7 +789,11 @@ function App() {
 
   function saveCouponCode(data) {
     if (data.id) {
-      setCouponCodes((prev) => prev.map((coupon) => coupon.id === data.id ? { ...coupon, ...data } : coupon));
+      setCouponCodes((prev) =>
+        prev.map((coupon) =>
+          coupon.id === data.id ? { ...coupon, ...data } : coupon,
+        ),
+      );
       setSelectedCouponCode(null);
       return;
     }
@@ -667,7 +819,9 @@ function App() {
 
   function saveBlog(data) {
     if (data.id) {
-      setBlogs((prev) => prev.map((blog) => blog.id === data.id ? { ...blog, ...data } : blog));
+      setBlogs((prev) =>
+        prev.map((blog) => (blog.id === data.id ? { ...blog, ...data } : blog)),
+      );
       setSelectedBlog(null);
       return;
     }
@@ -697,7 +851,9 @@ function App() {
         status: data.status,
       });
       const updated = normalizeBannerCategory(res.data);
-      setBannerCategories((prev) => prev.map((category) => category.id === data.id ? updated : category));
+      setBannerCategories((prev) =>
+        prev.map((category) => (category.id === data.id ? updated : category)),
+      );
       setSelectedBannerCategory(null);
       return;
     }
@@ -710,25 +866,35 @@ function App() {
   }
 
   async function saveBanner(data) {
+    if (!data.categoryId) throw new Error("Banner category is required.");
+    if (!data.id && !data.imageFile)
+      throw new Error("Banner image is required.");
+
     const fd = new FormData();
-    fd.append('linkUrl', data.link || '');
-    fd.append('categoryId', data.categoryId || '');
-    fd.append('categoryName', data.category || '');
-    fd.append('alt', data.imageText || data.category || '');
-    fd.append('status', data.status ? 'Active' : 'Inactive');
-    if (data.imageFile) fd.append('image', data.imageFile);
+    fd.append("linkUrl", data.link || "");
+    fd.append("categoryId", data.categoryId || "");
+    fd.append("categoryName", data.category || "");
+    fd.append("alt", data.imageText || data.category || "");
+    fd.append("status", data.status ? "Active" : "Inactive");
+    if (data.sortOrder || data.sortOrder === 0) {
+      fd.append("sortOrder", data.sortOrder);
+    }
+    if (data.imageFile) fd.append("image", data.imageFile);
 
     if (data.id) {
-      if (!data.imageFile && data.imageName) fd.append('file', data.imageName);
-      const res = await bannerAdsService.update(data.id, fd);
-      const updated = normalizeBanner(res.data);
-      setBanners((prev) => prev.map((banner) => banner.id === data.id ? updated : banner));
+      if (!data.imageFile && data.imageName) fd.append("file", data.imageName);
+      await bannerAdsService.update(data.id, fd);
+      const next = await fetchBannerState();
+      setBannerCategories(next.categories);
+      setBanners(next.banners);
       setSelectedBanner(null);
       return;
     }
 
-    const res = await bannerAdsService.create(fd);
-    setBanners((prev) => [...prev, normalizeBanner(res.data)]);
+    await bannerAdsService.create(fd);
+    const next = await fetchBannerState();
+    setBannerCategories(next.categories);
+    setBanners(next.banners);
   }
 
   async function toggleBannerCategoryStatus(category) {
@@ -738,29 +904,33 @@ function App() {
       sortOrder: category.sortOrder,
     });
     const updated = normalizeBannerCategory(res.data);
-    setBannerCategories((prev) => prev.map((item) => item.id === category.id ? updated : item));
+    setBannerCategories((prev) =>
+      prev.map((item) => (item.id === category.id ? updated : item)),
+    );
   }
 
   async function toggleBannerStatus(banner) {
     const fd = new FormData();
-    fd.append('linkUrl', banner.link || '');
-    fd.append('categoryId', banner.categoryId || '');
-    fd.append('categoryName', banner.category || '');
-    fd.append('file', banner.imageName || '');
-    fd.append('alt', banner.imageText || banner.category || '');
-    fd.append('status', banner.status ? 'Inactive' : 'Active');
+    fd.append("linkUrl", banner.link || "");
+    fd.append("categoryId", banner.categoryId || "");
+    fd.append("categoryName", banner.category || "");
+    fd.append("file", banner.imageName || "");
+    fd.append("alt", banner.imageText || banner.category || "");
+    fd.append("status", banner.status ? "Inactive" : "Active");
     const res = await bannerAdsService.update(banner.id, fd);
     const updated = normalizeBanner(res.data);
-    setBanners((prev) => prev.map((item) => item.id === banner.id ? updated : item));
+    setBanners((prev) =>
+      prev.map((item) => (item.id === banner.id ? updated : item)),
+    );
   }
 
   async function deleteBanner(id) {
-    if (!window.confirm('Delete this banner?')) return;
+    if (!window.confirm("Delete this banner?")) return;
     try {
       await bannerAdsService.delete(id);
       setBanners((prev) => prev.filter((banner) => banner.id !== id));
     } catch (err) {
-      alert(err.message || 'Banner delete failed.');
+      alert(err.message || "Banner delete failed.");
     }
   }
 
@@ -768,28 +938,68 @@ function App() {
     if (data.id) {
       const response = await expenseService.updateCategory(data.id, data);
       const saved = response.data;
-      setExpenseCategories((prev) => prev.map((category) => category.id === data.id ? { id: saved.Id, name: saved.name, status: saved.status === 'Active' } : category));
+      setExpenseCategories((prev) =>
+        prev.map((category) =>
+          category.id === data.id
+            ? {
+                id: saved.Id,
+                name: saved.name,
+                status: saved.status === "Active",
+              }
+            : category,
+        ),
+      );
       setSelectedExpenseCategory(null);
       return;
     }
     const response = await expenseService.createCategory(data);
     const saved = response.data;
-    setExpenseCategories((prev) => [...prev, { id: saved.Id, name: saved.name, status: saved.status === 'Active' }]);
+    setExpenseCategories((prev) => [
+      ...prev,
+      { id: saved.Id, name: saved.name, status: saved.status === "Active" },
+    ]);
   }
 
   async function saveExpense(data) {
-    const category = expenseCategories.find((item) => item.name === data.category);
-    const payload = { ...data, categoryId: category?.id || null, categoryName: data.category };
+    const category = expenseCategories.find(
+      (item) => item.name === data.category,
+    );
+    const payload = {
+      ...data,
+      categoryId: category?.id || null,
+      categoryName: data.category,
+    };
     if (data.id) {
       const response = await expenseService.update(data.id, payload);
       const saved = response.data;
-      setExpenses((prev) => prev.map((expense) => expense.id === data.id ? { ...data, id: saved.Id, amount: Number(saved.amount), category: saved.categoryName, status: saved.status === 'Active' } : expense));
+      setExpenses((prev) =>
+        prev.map((expense) =>
+          expense.id === data.id
+            ? {
+                ...data,
+                id: saved.Id,
+                amount: Number(saved.amount),
+                category: saved.categoryName,
+                status: saved.status === "Active",
+              }
+            : expense,
+        ),
+      );
       setSelectedExpense(null);
       return;
     }
     const response = await expenseService.create(payload);
     const saved = response.data;
-    setExpenses((prev) => [...prev, { ...data, id: saved.Id, amount: Number(saved.amount), category: saved.categoryName, status: saved.status === 'Active' }]);
+    setExpenses((prev) => [
+      ...prev,
+      {
+        ...data,
+        id: saved.Id,
+        amount: Number(saved.amount),
+        category: saved.categoryName,
+        status: saved.status === "Active",
+      },
+    ]);
   }
 
   async function deleteExpense(id) {
@@ -797,130 +1007,281 @@ function App() {
     setExpenses((prev) => prev.filter((expense) => expense.id !== id));
   }
 
-  // Full-screen pages (no sidebar/topnav)
-  if (activePage === 'create_order') {
-    return (
-      <div className="flex h-screen overflow-hidden bg-gray-100">
-        <CreateOrderPage
-          onNavigate={(page) => {
-            setActivePage(page);
-            if (page === 'orders') setActiveOrderStatus('all');
-          }}
-        />
-      </div>
-    );
+  function handleQuickNavigate(target) {
+    if (target === "landing") {
+      setActivePage("landing");
+      setActiveLandingPage("landing_manage");
+      return;
+    }
+    if (target === "visitors") {
+      setActivePage("marketing");
+      setActiveMarketingPage("visitor_reports");
+      return;
+    }
+    if (target === "pos") {
+      setActivePage("create_order");
+      return;
+    }
+    if (target === "expense") {
+      setActivePage("expense");
+      setActiveExpensePage("expense");
+      return;
+    }
+    if (target === "tutorial") {
+      window.alert(
+        "Tutorial link সেট করা হয়নি। VITE_TUTORIAL_URL দিলে এখানে open হবে।",
+      );
+    }
   }
 
-  if (activePage === 'invoice' && selectedOrder) {
+  function applyNavigationState(next) {
+    setActivePage(next.activePage);
+    setActiveOrderStatus(next.activeOrderStatus);
+    setActiveProductPage(next.activeProductPage);
+    setActiveSupplierPage(next.activeSupplierPage);
+    setActivePurchasePage(next.activePurchasePage);
+    setActiveLandingPage(next.activeLandingPage);
+    setActiveAdminPage(next.activeAdminPage);
+    setActiveCustomersPage(next.activeCustomersPage);
+    setActiveWebsitePage(next.activeWebsitePage);
+    setActiveApiPage(next.activeApiPage);
+    setActiveMarketingPage(next.activeMarketingPage);
+    setActiveBlogsPage(next.activeBlogsPage);
+    setActiveBannerPage(next.activeBannerPage);
+    setActiveExpensePage(next.activeExpensePage);
+    setActiveReportsPage(next.activeReportsPage);
+  }
+
+  function handleNotificationNavigate(url) {
+    const next = getNavigationStateFromUrl(url);
+    if (!next) return false;
+    applyNavigationState(next);
+    return true;
+  }
+
+  if (activePage === "invoice" && selectedOrder) {
     return (
       <div className="flex h-screen overflow-hidden bg-gray-100">
         <div className="flex flex-col flex-1 overflow-hidden">
-          <TopNav />
+          <TopNav
+            siteSettings={siteSettings}
+            onQuickNavigate={handleQuickNavigate}
+            onNotificationNavigate={handleNotificationNavigate}
+          />
           <InvoicePage
             order={selectedOrder}
-            onBack={() => { setActivePage('orders'); setSelectedOrder(null); }}
+            onBack={() => {
+              setActivePage("orders");
+              setSelectedOrder(null);
+            }}
           />
         </div>
       </div>
     );
   }
 
-  if (activePage === 'edit_order' && selectedOrder) {
-    return (
-      <div className="flex h-screen overflow-hidden bg-gray-100">
+  function renderMain() {
+    if (activePage === "create_order") {
+      return (
+        <CreateOrderPage
+          onNavigate={(page) => {
+            setActivePage(page);
+            if (page === "orders") setActiveOrderStatus("all");
+          }}
+        />
+      );
+    }
+    if (activePage === "edit_order" && selectedOrder) {
+      return (
         <EditOrderPage
           order={selectedOrder}
+          onCountsRefresh={refetchOrderCounts}
           onNavigate={(page) => {
             setActivePage(page);
             setSelectedOrder(null);
-            if (page === 'orders') setActiveOrderStatus('all');
+            if (page === "orders") setActiveOrderStatus("all");
           }}
         />
-      </div>
-    );
-  }
-
-  function renderMain() {
-    if (activePage === 'dashboard') return <Dashboard />;
-    if (activePage === 'orders') return (
-      <OrdersPage
-        activeStatus={activeOrderStatus}
-        onStatusChange={setActiveOrderStatus}
-        onCreateOrder={() => setActivePage('create_order')}
-        onViewOrder={(order) => { setSelectedOrder(order); setActivePage('invoice'); }}
-        onEditOrder={(order) => { setSelectedOrder(order); setActivePage('edit_order'); }}
-        statusCounts={orderCounts}
-        onCountsRefresh={refetchOrderCounts}
-      />
-    );
-    if (activePage === 'create_product') {
-      return <ProductCreatePage onNavigate={() => goProducts('product_manage')} />;
+      );
     }
-    if (activePage === 'edit_product' && selectedProduct) {
-      return <ProductEditPage product={selectedProduct} onNavigate={() => { goProducts('product_manage'); setSelectedProduct(null); }} />;
+    if (activePage === "dashboard") return <Dashboard />;
+    if (activePage === "orders")
+      return (
+        <OrdersPage
+          activeStatus={activeOrderStatus}
+          onStatusChange={setActiveOrderStatus}
+          onCreateOrder={() => setActivePage("create_order")}
+          onViewOrder={(order) => {
+            setSelectedOrder(order);
+            setActivePage("invoice");
+          }}
+          onEditOrder={(order) => {
+            setSelectedOrder(order);
+            setActivePage("edit_order");
+          }}
+          statusCounts={orderCounts}
+          onCountsRefresh={refetchOrderCounts}
+        />
+      );
+    if (activePage === "create_product") {
+      return (
+        <ProductCreatePage onNavigate={() => goProducts("product_manage")} />
+      );
     }
-    if (activePage === 'create_category') {
-      return <CategoryCreatePage onNavigate={(page) => goProducts(page || 'categories')} />;
+    if (activePage === "edit_product" && selectedProduct) {
+      return (
+        <ProductEditPage
+          product={selectedProduct}
+          onNavigate={() => {
+            goProducts("product_manage");
+            setSelectedProduct(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_category' && selectedCategory) {
-      return <CategoryEditPage category={selectedCategory} onNavigate={(page) => { goProducts(page || 'categories'); setSelectedCategory(null); }} />;
+    if (activePage === "create_category") {
+      return (
+        <CategoryCreatePage
+          onNavigate={(page) => goProducts(page || "categories")}
+        />
+      );
     }
-    if (activePage === 'create_subcategory') {
-      return <SubcategoryCreatePage onNavigate={(page) => goProducts(page || 'subcategories')} />;
+    if (activePage === "edit_category" && selectedCategory) {
+      return (
+        <CategoryEditPage
+          category={selectedCategory}
+          onNavigate={(page) => {
+            goProducts(page || "categories");
+            setSelectedCategory(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_subcategory' && selectedSubcategory) {
-      return <SubcategoryEditPage subcategory={selectedSubcategory} onNavigate={(page) => { goProducts(page || 'subcategories'); setSelectedSubcategory(null); }} />;
+    if (activePage === "create_subcategory") {
+      return (
+        <SubcategoryCreatePage
+          onNavigate={(page) => goProducts(page || "subcategories")}
+        />
+      );
     }
-    if (activePage === 'create_childcategory') {
-      return <ChildcategoryCreatePage onNavigate={(page) => goProducts(page || 'childcategories')} />;
+    if (activePage === "edit_subcategory" && selectedSubcategory) {
+      return (
+        <SubcategoryEditPage
+          subcategory={selectedSubcategory}
+          onNavigate={(page) => {
+            goProducts(page || "subcategories");
+            setSelectedSubcategory(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_childcategory' && selectedChildcategory) {
-      return <ChildcategoryEditPage childcategory={selectedChildcategory} onNavigate={(page) => { goProducts(page || 'childcategories'); setSelectedChildcategory(null); }} />;
+    if (activePage === "create_childcategory") {
+      return (
+        <ChildcategoryCreatePage
+          onNavigate={(page) => goProducts(page || "childcategories")}
+        />
+      );
     }
-    if (activePage === 'create_brand') {
-      return <BrandCreatePage onNavigate={(page) => goProducts(page || 'brands')} />;
+    if (activePage === "edit_childcategory" && selectedChildcategory) {
+      return (
+        <ChildcategoryEditPage
+          childcategory={selectedChildcategory}
+          onNavigate={(page) => {
+            goProducts(page || "childcategories");
+            setSelectedChildcategory(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_brand' && selectedBrand) {
-      return <BrandEditPage brand={selectedBrand} onNavigate={(page) => { goProducts(page || 'brands'); setSelectedBrand(null); }} />;
+    if (activePage === "create_brand") {
+      return (
+        <BrandCreatePage onNavigate={(page) => goProducts(page || "brands")} />
+      );
     }
-    if (activePage === 'create_color') {
-      return <ColorCreatePage onNavigate={(page) => goProducts(page || 'colors')} />;
+    if (activePage === "edit_brand" && selectedBrand) {
+      return (
+        <BrandEditPage
+          brand={selectedBrand}
+          onNavigate={(page) => {
+            goProducts(page || "brands");
+            setSelectedBrand(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_color' && selectedColor) {
-      return <ColorEditPage color={selectedColor} onNavigate={(page) => { goProducts(page || 'colors'); setSelectedColor(null); }} />;
+    if (activePage === "create_color") {
+      return (
+        <ColorCreatePage onNavigate={(page) => goProducts(page || "colors")} />
+      );
     }
-    if (activePage === 'create_attribute') {
-      return <AttributeFormPage onNavigate={(page) => goProducts(page || 'attribute')} />;
+    if (activePage === "edit_color" && selectedColor) {
+      return (
+        <ColorEditPage
+          color={selectedColor}
+          onNavigate={(page) => {
+            goProducts(page || "colors");
+            setSelectedColor(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_attribute' && selectedAttribute) {
-      return <AttributeFormPage mode="edit" attribute={selectedAttribute} onNavigate={(page) => { goProducts(page || 'attribute'); setSelectedAttribute(null); }} />;
+    if (activePage === "create_attribute") {
+      return (
+        <AttributeFormPage
+          onNavigate={(page) => goProducts(page || "attribute")}
+        />
+      );
     }
-    if (activePage === 'create_review') {
-      return <ReviewFormPage onNavigate={(page) => goProducts(page || 'reviews')} />;
+    if (activePage === "edit_attribute" && selectedAttribute) {
+      return (
+        <AttributeFormPage
+          mode="edit"
+          attribute={selectedAttribute}
+          onNavigate={(page) => {
+            goProducts(page || "attribute");
+            setSelectedAttribute(null);
+          }}
+        />
+      );
     }
-    if (activePage === 'edit_review' && selectedReview) {
-      return <ReviewFormPage mode="edit" review={selectedReview} onNavigate={(page) => { goProducts(page || 'reviews'); setSelectedReview(null); }} />;
+    if (activePage === "create_review") {
+      return (
+        <ReviewFormPage onNavigate={(page) => goProducts(page || "reviews")} />
+      );
     }
-    if (activePage === 'supplier') {
-      const goSupplier = (page) => { setActivePage('supplier'); setActiveSupplierPage(page); };
-      if (activeSupplierPage === 'supplier_list') {
+    if (activePage === "edit_review" && selectedReview) {
+      return (
+        <ReviewFormPage
+          mode="edit"
+          review={selectedReview}
+          onNavigate={(page) => {
+            goProducts(page || "reviews");
+            setSelectedReview(null);
+          }}
+        />
+      );
+    }
+    if (activePage === "supplier") {
+      const goSupplier = (page) => {
+        setActivePage("supplier");
+        setActiveSupplierPage(page);
+      };
+      if (activeSupplierPage === "supplier_list") {
         return (
           <SupplierListPage
             onNavigate={goSupplier}
-            onEditSupplier={(s) => { setSelectedSupplier(s); goSupplier('supplier_edit'); }}
-            onPaymentSupplier={() => goSupplier('payment_add')}
+            onEditSupplier={(s) => {
+              setSelectedSupplier(s);
+              goSupplier("supplier_edit");
+            }}
+            onPaymentSupplier={() => goSupplier("payment_add")}
           />
         );
       }
-      if (activeSupplierPage === 'supplier_add') {
-        return (
-          <SupplierFormPage
-            mode="create"
-            onNavigate={goSupplier}
-          />
-        );
+      if (activeSupplierPage === "supplier_add") {
+        return <SupplierFormPage mode="create" onNavigate={goSupplier} />;
       }
-      if (activeSupplierPage === 'supplier_edit' && selectedSupplier) {
+      if (activeSupplierPage === "supplier_edit" && selectedSupplier) {
         return (
           <SupplierFormPage
             mode="edit"
@@ -930,15 +1291,10 @@ function App() {
           />
         );
       }
-      if (activeSupplierPage === 'payment_add') {
-        return (
-          <PaymentAddPage
-            mode="create"
-            onNavigate={goSupplier}
-          />
-        );
+      if (activeSupplierPage === "payment_add") {
+        return <PaymentAddPage mode="create" onNavigate={goSupplier} />;
       }
-      if (activeSupplierPage === 'payment_edit' && selectedPayment) {
+      if (activeSupplierPage === "payment_edit" && selectedPayment) {
         return (
           <PaymentAddPage
             mode="edit"
@@ -948,35 +1304,39 @@ function App() {
           />
         );
       }
-      if (activeSupplierPage === 'payment_list') {
+      if (activeSupplierPage === "payment_list") {
         return (
           <PaymentListPage
             onNavigate={goSupplier}
-            onEditPayment={(p) => { setSelectedPayment(p); goSupplier('payment_edit'); }}
+            onEditPayment={(p) => {
+              setSelectedPayment(p);
+              goSupplier("payment_edit");
+            }}
           />
         );
       }
       return <Dashboard />;
     }
-    if (activePage === 'purchase') {
-      const goPurchase = (page) => { setActivePage('purchase'); setActivePurchasePage(page); };
-      if (activePurchasePage === 'purchase_list') {
+    if (activePage === "purchase") {
+      const goPurchase = (page) => {
+        setActivePage("purchase");
+        setActivePurchasePage(page);
+      };
+      if (activePurchasePage === "purchase_list") {
         return (
           <PurchaseListPage
             onNavigate={goPurchase}
-            onEditPurchase={(p) => { setSelectedPurchase(p); goPurchase('purchase_edit'); }}
+            onEditPurchase={(p) => {
+              setSelectedPurchase(p);
+              goPurchase("purchase_edit");
+            }}
           />
         );
       }
-      if (activePurchasePage === 'purchase_add') {
-        return (
-          <PurchaseFormPage
-            mode="create"
-            onNavigate={goPurchase}
-          />
-        );
+      if (activePurchasePage === "purchase_add") {
+        return <PurchaseFormPage mode="create" onNavigate={goPurchase} />;
       }
-      if (activePurchasePage === 'purchase_edit' && selectedPurchase) {
+      if (activePurchasePage === "purchase_edit" && selectedPurchase) {
         return (
           <PurchaseFormPage
             mode="edit"
@@ -988,243 +1348,410 @@ function App() {
       }
       return <Dashboard />;
     }
-    if (activePage === 'admin') {
-      const goAdmin = (page) => { setActivePage('admin'); setActiveAdminPage(page); };
-      if (activeAdminPage === 'admin_user') {
+    if (activePage === "admin") {
+      const goAdmin = (page) => {
+        setActivePage("admin");
+        setActiveAdminPage(page);
+      };
+      if (activeAdminPage === "admin_user") {
         return (
           <AdminUserPage
             onNavigate={goAdmin}
-            onEditUser={(u) => { setSelectedUser(u); setActiveAdminPage('admin_user_edit'); }}
+            onEditUser={(u) => {
+              setSelectedUser(u);
+              setActiveAdminPage("admin_user_edit");
+            }}
           />
         );
       }
-      if (activeAdminPage === 'admin_user_edit') {
+      if (activeAdminPage === "admin_user_edit") {
         return (
           <AdminUserEditPage
             user={selectedUser}
             onSave={() => setSelectedUser(null)}
-            onNavigate={(page) => { setSelectedUser(null); goAdmin(page); }}
+            onNavigate={(page) => {
+              setSelectedUser(null);
+              goAdmin(page);
+            }}
           />
         );
       }
-      if (activeAdminPage === 'admin_roles') {
+      if (activeAdminPage === "admin_roles") {
         return (
           <AdminRolesPage
-            onEditRole={(r) => { setSelectedRole(r); setActiveAdminPage('admin_role_edit'); }}
+            onEditRole={(r) => {
+              setSelectedRole(r);
+              setActiveAdminPage("admin_role_edit");
+            }}
           />
         );
       }
-      if (activeAdminPage === 'admin_role_edit' && selectedRole) {
+      if (activeAdminPage === "admin_role_edit" && selectedRole) {
         return (
           <AdminRoleEditPage
             role={selectedRole}
-            onSave={() => { setSelectedRole(null); }}
-            onNavigate={(page) => { setSelectedRole(null); goAdmin(page); }}
+            onSave={() => {
+              setSelectedRole(null);
+            }}
+            onNavigate={(page) => {
+              setSelectedRole(null);
+              goAdmin(page);
+            }}
           />
         );
       }
-      if (activeAdminPage === 'admin_permissions') {
+      if (activeAdminPage === "admin_permissions") {
         return (
           <AdminPermissionsPage
-            onEditPermission={(role) => { setSelectedRole(role); setActiveAdminPage('admin_role_edit'); }}
+            onEditPermission={(role) => {
+              setSelectedRole(role);
+              setActiveAdminPage("admin_role_edit");
+            }}
           />
         );
       }
-      return <AdminUserPage onNavigate={goAdmin} onEditUser={(u) => { setSelectedUser(u); setActiveAdminPage('admin_user_edit'); }} />;
+      return (
+        <AdminUserPage
+          onNavigate={goAdmin}
+          onEditUser={(u) => {
+            setSelectedUser(u);
+            setActiveAdminPage("admin_user_edit");
+          }}
+        />
+      );
     }
-    if (activePage === 'landing') {
-      const goLanding = (page) => { setActivePage('landing'); setActiveLandingPage(page); };
-      if (activeLandingPage === 'landing_create') {
+    if (activePage === "landing") {
+      const goLanding = (page) => {
+        setActivePage("landing");
+        setActiveLandingPage(page);
+      };
+      if (activeLandingPage === "landing_create") {
         return <LandingPageCreatePage onNavigate={goLanding} />;
       }
-      if (activeLandingPage === 'landing_edit' && selectedCampaign) {
+      if (activeLandingPage === "landing_edit" && selectedCampaign) {
         return (
           <LandingPageCreatePage
             key={selectedCampaign.Id}
             mode="edit"
             campaign={selectedCampaign}
-            onNavigate={(page) => { setSelectedCampaign(null); goLanding(page || 'landing_manage'); }}
+            onNavigate={(page) => {
+              setSelectedCampaign(null);
+              goLanding(page || "landing_manage");
+            }}
           />
         );
       }
-      if (activeLandingPage === 'landing_manage') {
+      if (activeLandingPage === "landing_manage") {
         return (
           <LandingPageManagePage
             onNavigate={goLanding}
-            onViewCampaign={(c) => window.open(`/?landingPageId=${c.Id}`, '_blank', 'noopener,noreferrer')}
-            onEditCampaign={(c) => { setSelectedCampaign(c); setActiveLandingPage('landing_edit'); }}
+            onViewCampaign={(c) =>
+              window.open(
+                `/?landingPageId=${c.Id}`,
+                "_blank",
+                "noopener,noreferrer",
+              )
+            }
+            onEditCampaign={(c) => {
+              setSelectedCampaign(c);
+              setActiveLandingPage("landing_edit");
+            }}
           />
         );
       }
-      if (activeLandingPage === 'landing_footer') {
+      if (activeLandingPage === "landing_footer") {
         return <LandingPageFooterPage />;
       }
-      if (activeLandingPage === 'landing_header') {
+      if (activeLandingPage === "landing_header") {
         return <LandingPageHeaderPage />;
       }
-      if (activeLandingPage === 'landing_view' && selectedCampaign) {
+      if (activeLandingPage === "landing_view" && selectedCampaign) {
         return (
           <LandingPageViewPage
             campaign={selectedCampaign}
-            onBack={() => { setSelectedCampaign(null); setActiveLandingPage('landing_manage'); }}
+            onBack={() => {
+              setSelectedCampaign(null);
+              setActiveLandingPage("landing_manage");
+            }}
           />
         );
       }
       return <LandingPageCreatePage onNavigate={goLanding} />;
     }
-    if (activePage === 'products') {
-      if (activeProductPage === 'product_manage') {
-        return <ProductManagePage onNavigate={(page, data) => {
-          if (page === 'edit_product' && data) { setSelectedProduct(data); }
-          setActivePage(page);
-        }} />;
-      }
-      if (activeProductPage === 'categories') {
-        return <CategoriesPage onNavigate={setActivePage} onEditCategory={(cat) => { setSelectedCategory(cat); setActivePage('edit_category'); }} />;
-      }
-      if (activeProductPage === 'subcategories') {
-        return <SubcategoriesPage onNavigate={setActivePage} onEditSubcategory={(sub) => { setSelectedSubcategory(sub); setActivePage('edit_subcategory'); }} />;
-      }
-      if (activeProductPage === 'childcategories') {
-        return <ChildCategoriesPage onNavigate={setActivePage} onEditChildcategory={(child) => { setSelectedChildcategory(child); setActivePage('edit_childcategory'); }} />;
-      }
-      if (activeProductPage === 'brands') {
-        return <BrandsPage onNavigate={setActivePage} onEditBrand={(b) => { setSelectedBrand(b); setActivePage('edit_brand'); }} />;
-      }
-      if (activeProductPage === 'colors') {
-        return <ColorsPage onNavigate={setActivePage} onEditColor={(c) => { setSelectedColor(c); setActivePage('edit_color'); }} />;
-      }
-      if (activeProductPage === 'attribute') {
-        return <AttributePage onNavigate={setActivePage} onEditAttribute={(attribute) => { setSelectedAttribute(attribute); setActivePage('edit_attribute'); }} />;
-      }
-      if (activeProductPage === 'barcode') {
-        return <BarcodePage />;
-      }
-      if (activeProductPage === 'reviews') {
-        return <ReviewsPage onNavigate={setActivePage} onEditReview={(review) => { setSelectedReview(review); setActivePage('edit_review'); }} />;
-      }
-      return <Dashboard />;
-    }
-    if (activePage === 'customers') {
-      const goCustomers = (page) => { setActivePage('customers'); setActiveCustomersPage(page); };
-      if (activeCustomersPage === 'customer_list') {
+    if (activePage === "products") {
+      if (activeProductPage === "product_manage") {
         return (
-          <CustomerListPage
-            onEditCustomer={(c) => { setSelectedCustomer(c); setActiveCustomersPage('customer_edit'); }}
-            onViewCustomer={(c) => { setSelectedCustomer(c); setActiveCustomersPage('customer_view'); }}
+          <ProductManagePage
+            onNavigate={(page, data) => {
+              if (page === "edit_product" && data) {
+                setSelectedProduct(data);
+              }
+              setActivePage(page);
+            }}
           />
         );
       }
-      if (activeCustomersPage === 'customer_edit' && selectedCustomer) {
+      if (activeProductPage === "categories") {
+        return (
+          <CategoriesPage
+            onNavigate={setActivePage}
+            onEditCategory={(cat) => {
+              setSelectedCategory(cat);
+              setActivePage("edit_category");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "subcategories") {
+        return (
+          <SubcategoriesPage
+            onNavigate={setActivePage}
+            onEditSubcategory={(sub) => {
+              setSelectedSubcategory(sub);
+              setActivePage("edit_subcategory");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "childcategories") {
+        return (
+          <ChildCategoriesPage
+            onNavigate={setActivePage}
+            onEditChildcategory={(child) => {
+              setSelectedChildcategory(child);
+              setActivePage("edit_childcategory");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "brands") {
+        return (
+          <BrandsPage
+            onNavigate={setActivePage}
+            onEditBrand={(b) => {
+              setSelectedBrand(b);
+              setActivePage("edit_brand");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "colors") {
+        return (
+          <ColorsPage
+            onNavigate={setActivePage}
+            onEditColor={(c) => {
+              setSelectedColor(c);
+              setActivePage("edit_color");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "attribute") {
+        return (
+          <AttributePage
+            onNavigate={setActivePage}
+            onEditAttribute={(attribute) => {
+              setSelectedAttribute(attribute);
+              setActivePage("edit_attribute");
+            }}
+          />
+        );
+      }
+      if (activeProductPage === "barcode") {
+        return <BarcodePage />;
+      }
+      if (activeProductPage === "reviews") {
+        return (
+          <ReviewsPage
+            onNavigate={setActivePage}
+            onEditReview={(review) => {
+              setSelectedReview(review);
+              setActivePage("edit_review");
+            }}
+          />
+        );
+      }
+      return <Dashboard />;
+    }
+    if (activePage === "customers") {
+      const goCustomers = (page) => {
+        setActivePage("customers");
+        setActiveCustomersPage(page);
+      };
+      if (activeCustomersPage === "customer_list") {
+        return (
+          <CustomerListPage
+            onEditCustomer={(c) => {
+              setSelectedCustomer(c);
+              setActiveCustomersPage("customer_edit");
+            }}
+            onViewCustomer={(c) => {
+              setSelectedCustomer(c);
+              setActiveCustomersPage("customer_view");
+            }}
+          />
+        );
+      }
+      if (activeCustomersPage === "customer_edit" && selectedCustomer) {
         return (
           <CustomerEditPage
             customer={selectedCustomer}
             onSave={() => setSelectedCustomer(null)}
-            onNavigate={(page) => { setSelectedCustomer(null); goCustomers(page); }}
+            onNavigate={(page) => {
+              setSelectedCustomer(null);
+              goCustomers(page);
+            }}
           />
         );
       }
-      if (activeCustomersPage === 'customer_view' && selectedCustomer) {
+      if (activeCustomersPage === "customer_view" && selectedCustomer) {
         return (
           <CustomerViewPage
             customer={selectedCustomer}
-            onNavigate={(page) => { setSelectedCustomer(null); goCustomers(page); }}
-            onLoginAs={(c) => { setSelectedCustomer(c); setActiveCustomersPage('customer_login_as'); }}
+            onNavigate={(page) => {
+              setSelectedCustomer(null);
+              goCustomers(page);
+            }}
+            onLoginAs={(c) => {
+              setSelectedCustomer(c);
+              setActiveCustomersPage("customer_login_as");
+            }}
           />
         );
       }
-      if (activeCustomersPage === 'customer_login_as' && selectedCustomer) {
+      if (activeCustomersPage === "customer_login_as" && selectedCustomer) {
         return (
           <CustomerLoginAsPage
             customer={selectedCustomer}
-            onBack={() => { setSelectedCustomer(null); goCustomers('customer_list'); }}
+            onBack={() => {
+              setSelectedCustomer(null);
+              goCustomers("customer_list");
+            }}
           />
         );
       }
-      if (activeCustomersPage === 'ip_block') {
+      if (activeCustomersPage === "ip_block") {
         return <CustomerIpBlockPage />;
       }
       return <CustomerListPage />;
     }
-    if (activePage === 'website') {
-      if (activeWebsitePage === 'general_setting') return <WebsiteGeneralSettingPage />;
-      if (activeWebsitePage === 'social_media')    return <WebsiteSocialMediaPage />;
-      if (activeWebsitePage === 'contact')          return <WebsiteContactPage />;
-      if (activeWebsitePage === 'shipping_charge') {
+    if (activePage === "website") {
+      if (activeWebsitePage === "general_setting")
+        return <WebsiteGeneralSettingPage />;
+      if (activeWebsitePage === "social_media")
+        return <WebsiteSocialMediaPage />;
+      if (activeWebsitePage === "contact") return <WebsiteContactPage />;
+      if (activeWebsitePage === "shipping_charge") {
         return (
           <WebsiteShippingChargePage
-            onEdit={(c) => { setSelectedShippingCharge(c); setActiveWebsitePage('shipping_charge_edit'); }}
-            onCreate={() => { setSelectedShippingCharge(null); setActiveWebsitePage('shipping_charge_edit'); }}
+            onEdit={(c) => {
+              setSelectedShippingCharge(c);
+              setActiveWebsitePage("shipping_charge_edit");
+            }}
+            onCreate={() => {
+              setSelectedShippingCharge(null);
+              setActiveWebsitePage("shipping_charge_edit");
+            }}
           />
         );
       }
-      if (activeWebsitePage === 'order_status') {
+      if (activeWebsitePage === "order_status") {
         return (
           <WebsiteOrderStatusPage
-            onEdit={(s) => { setSelectedOrderStatus(s); setActiveWebsitePage('order_status_edit'); }}
-            onCreate={() => { setSelectedOrderStatus(null); setActiveWebsitePage('order_status_edit'); }}
+            onEdit={(s) => {
+              setSelectedOrderStatus(s);
+              setActiveWebsitePage("order_status_edit");
+            }}
+            onCreate={() => {
+              setSelectedOrderStatus(null);
+              setActiveWebsitePage("order_status_edit");
+            }}
           />
         );
       }
-      if (activeWebsitePage === 'order_status_edit') {
+      if (activeWebsitePage === "order_status_edit") {
         return (
           <WebsiteOrderStatusEditPage
             status={selectedOrderStatus}
             onSave={() => setSelectedOrderStatus(null)}
-            onNavigate={(page) => { setSelectedOrderStatus(null); setActiveWebsitePage(page); }}
+            onNavigate={(page) => {
+              setSelectedOrderStatus(null);
+              setActiveWebsitePage(page);
+            }}
           />
         );
       }
-      if (activeWebsitePage === 'shipping_charge_edit') {
+      if (activeWebsitePage === "shipping_charge_edit") {
         return (
           <WebsiteShippingChargeEditPage
             charge={selectedShippingCharge}
             onSave={() => setSelectedShippingCharge(null)}
-            onNavigate={(page) => { setSelectedShippingCharge(null); setActiveWebsitePage(page); }}
+            onNavigate={(page) => {
+              setSelectedShippingCharge(null);
+              setActiveWebsitePage(page);
+            }}
           />
         );
       }
-      if (activeWebsitePage === 'create_page') {
+      if (activeWebsitePage === "create_page") {
         return (
           <WebsitePageManagePage
-            onEdit={(p) => { setSelectedPage(p); setActiveWebsitePage('page_edit'); }}
-            onCreate={() => { setSelectedPage(null); setActiveWebsitePage('page_edit'); }}
+            onEdit={(p) => {
+              setSelectedPage(p);
+              setActiveWebsitePage("page_edit");
+            }}
+            onCreate={() => {
+              setSelectedPage(null);
+              setActiveWebsitePage("page_edit");
+            }}
           />
         );
       }
-      if (activeWebsitePage === 'page_edit') {
+      if (activeWebsitePage === "page_edit") {
         return (
           <WebsitePageEditPage
             page={selectedPage}
             onSave={() => setSelectedPage(null)}
-            onNavigate={(pg) => { setSelectedPage(null); setActiveWebsitePage(pg); }}
+            onNavigate={(pg) => {
+              setSelectedPage(null);
+              setActiveWebsitePage(pg);
+            }}
           />
         );
       }
       return <WebsiteGeneralSettingPage />;
     }
-    if (activePage === 'api') {
-      if (activeApiPage === 'courier_api') return <CourierApiPage />;
-      if (activeApiPage === 'payment_gateway') return <PaymentGatewayPage />;
-      if (activeApiPage === 'sms_gateway') return <SmsGatewayPage />;
-      if (activeApiPage === 'fraud_checker_api') return <FraudCheckerApiPage />;
+    if (activePage === "api") {
+      if (activeApiPage === "courier_api") return <CourierApiPage />;
+      if (activeApiPage === "payment_gateway") return <PaymentGatewayPage />;
+      if (activeApiPage === "sms_gateway") return <SmsGatewayPage />;
+      if (activeApiPage === "fraud_checker_api") return <FraudCheckerApiPage />;
       return <CourierApiPage />;
     }
-    if (activePage === 'marketing') {
-      const goMarketing = (page) => { setActivePage('marketing'); setActiveMarketingPage(page); };
+    if (activePage === "marketing") {
+      const goMarketing = (page) => {
+        setActivePage("marketing");
+        setActiveMarketingPage(page);
+      };
 
-      if (activeMarketingPage === 'tag_manager') {
+      if (activeMarketingPage === "tag_manager") {
         return (
           <TagManagerPage
             tags={tagManagers}
-            onCreate={() => { setSelectedTagManager(null); goMarketing('tag_manager_create'); }}
-            onEdit={(tag) => { setSelectedTagManager(tag); goMarketing('tag_manager_edit'); }}
+            onCreate={() => {
+              setSelectedTagManager(null);
+              goMarketing("tag_manager_create");
+            }}
+            onEdit={(tag) => {
+              setSelectedTagManager(tag);
+              goMarketing("tag_manager_edit");
+            }}
             onDelete={deleteTagManager}
           />
         );
       }
 
-      if (activeMarketingPage === 'tag_manager_create') {
+      if (activeMarketingPage === "tag_manager_create") {
         return (
           <TagManagerFormPage
             onSave={saveTagManager}
@@ -1233,29 +1760,38 @@ function App() {
         );
       }
 
-      if (activeMarketingPage === 'tag_manager_edit' && selectedTagManager) {
+      if (activeMarketingPage === "tag_manager_edit" && selectedTagManager) {
         return (
           <TagManagerFormPage
             mode="edit"
             tag={selectedTagManager}
             onSave={saveTagManager}
-            onNavigate={(page) => { setSelectedTagManager(null); goMarketing(page); }}
+            onNavigate={(page) => {
+              setSelectedTagManager(null);
+              goMarketing(page);
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'facebook_pixels') {
+      if (activeMarketingPage === "facebook_pixels") {
         return (
           <FacebookPixelsPage
             pixels={facebookPixels}
-            onCreate={() => { setSelectedFacebookPixel(null); goMarketing('facebook_pixels_create'); }}
-            onEdit={(pixel) => { setSelectedFacebookPixel(pixel); goMarketing('facebook_pixels_edit'); }}
+            onCreate={() => {
+              setSelectedFacebookPixel(null);
+              goMarketing("facebook_pixels_create");
+            }}
+            onEdit={(pixel) => {
+              setSelectedFacebookPixel(pixel);
+              goMarketing("facebook_pixels_edit");
+            }}
             onDelete={deleteFacebookPixel}
           />
         );
       }
 
-      if (activeMarketingPage === 'facebook_pixels_create') {
+      if (activeMarketingPage === "facebook_pixels_create") {
         return (
           <FacebookPixelsFormPage
             onSave={saveFacebookPixel}
@@ -1264,77 +1800,117 @@ function App() {
         );
       }
 
-      if (activeMarketingPage === 'facebook_pixels_edit' && selectedFacebookPixel) {
+      if (
+        activeMarketingPage === "facebook_pixels_edit" &&
+        selectedFacebookPixel
+      ) {
         return (
           <FacebookPixelsFormPage
             mode="edit"
             pixel={selectedFacebookPixel}
             onSave={saveFacebookPixel}
-            onNavigate={(page) => { setSelectedFacebookPixel(null); goMarketing(page); }}
+            onNavigate={(page) => {
+              setSelectedFacebookPixel(null);
+              goMarketing(page);
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'tiktok_pixels') {
+      if (activeMarketingPage === "tiktok_pixels") {
         return (
           <TiktokPixelsPage
-            onCreate={() => { setSelectedTiktokPixel(null); goMarketing('tiktok_pixels_create'); }}
-            onEdit={(pixel) => { setSelectedTiktokPixel(pixel); goMarketing('tiktok_pixels_edit'); }}
+            onCreate={() => {
+              setSelectedTiktokPixel(null);
+              goMarketing("tiktok_pixels_create");
+            }}
+            onEdit={(pixel) => {
+              setSelectedTiktokPixel(pixel);
+              goMarketing("tiktok_pixels_edit");
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'tiktok_pixels_create') {
-        return <TiktokPixelFormPage onSave={() => setSelectedTiktokPixel(null)} onNavigate={goMarketing} />;
+      if (activeMarketingPage === "tiktok_pixels_create") {
+        return (
+          <TiktokPixelFormPage
+            onSave={() => setSelectedTiktokPixel(null)}
+            onNavigate={goMarketing}
+          />
+        );
       }
 
-      if (activeMarketingPage === 'tiktok_pixels_edit' && selectedTiktokPixel) {
+      if (activeMarketingPage === "tiktok_pixels_edit" && selectedTiktokPixel) {
         return (
           <TiktokPixelFormPage
             mode="edit"
             pixel={selectedTiktokPixel}
             onSave={() => setSelectedTiktokPixel(null)}
-            onNavigate={(page) => { setSelectedTiktokPixel(null); goMarketing(page); }}
+            onNavigate={(page) => {
+              setSelectedTiktokPixel(null);
+              goMarketing(page);
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'google_ads') {
+      if (activeMarketingPage === "google_ads") {
         return (
           <GoogleAdsPage
-            onCreate={() => { setSelectedGoogleAds(null); goMarketing('google_ads_create'); }}
-            onEdit={(config) => { setSelectedGoogleAds(config); goMarketing('google_ads_edit'); }}
+            onCreate={() => {
+              setSelectedGoogleAds(null);
+              goMarketing("google_ads_create");
+            }}
+            onEdit={(config) => {
+              setSelectedGoogleAds(config);
+              goMarketing("google_ads_edit");
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'google_ads_create') {
-        return <GoogleAdsFormPage onSave={() => setSelectedGoogleAds(null)} onNavigate={goMarketing} />;
+      if (activeMarketingPage === "google_ads_create") {
+        return (
+          <GoogleAdsFormPage
+            onSave={() => setSelectedGoogleAds(null)}
+            onNavigate={goMarketing}
+          />
+        );
       }
 
-      if (activeMarketingPage === 'google_ads_edit' && selectedGoogleAds) {
+      if (activeMarketingPage === "google_ads_edit" && selectedGoogleAds) {
         return (
           <GoogleAdsFormPage
             mode="edit"
             config={selectedGoogleAds}
             onSave={() => setSelectedGoogleAds(null)}
-            onNavigate={(page) => { setSelectedGoogleAds(null); goMarketing(page); }}
+            onNavigate={(page) => {
+              setSelectedGoogleAds(null);
+              goMarketing(page);
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'coupon_code') {
+      if (activeMarketingPage === "coupon_code") {
         return (
           <CouponCodePage
             coupons={couponCodes}
-            onCreate={() => { setSelectedCouponCode(null); goMarketing('coupon_code_create'); }}
-            onEdit={(coupon) => { setSelectedCouponCode(coupon); goMarketing('coupon_code_edit'); }}
+            onCreate={() => {
+              setSelectedCouponCode(null);
+              goMarketing("coupon_code_create");
+            }}
+            onEdit={(coupon) => {
+              setSelectedCouponCode(coupon);
+              goMarketing("coupon_code_edit");
+            }}
             onDelete={deleteCouponCode}
           />
         );
       }
 
-      if (activeMarketingPage === 'coupon_code_create') {
+      if (activeMarketingPage === "coupon_code_create") {
         return (
           <CouponCodeFormPage
             onSave={saveCouponCode}
@@ -1343,82 +1919,121 @@ function App() {
         );
       }
 
-      if (activeMarketingPage === 'coupon_code_edit' && selectedCouponCode) {
+      if (activeMarketingPage === "coupon_code_edit" && selectedCouponCode) {
         return (
           <CouponCodeFormPage
             mode="edit"
             coupon={selectedCouponCode}
             onSave={saveCouponCode}
-            onNavigate={(page) => { setSelectedCouponCode(null); goMarketing(page); }}
+            onNavigate={(page) => {
+              setSelectedCouponCode(null);
+              goMarketing(page);
+            }}
           />
         );
       }
 
-      if (activeMarketingPage === 'sms_marketing') {
+      if (activeMarketingPage === "sms_marketing") {
         return <SmsMarketingPage />;
       }
 
-      if (activeMarketingPage === 'facebook_catalogue') {
+      if (activeMarketingPage === "facebook_catalogue") {
         return <FacebookCataloguePage />;
       }
 
-      if (activeMarketingPage === 'visitor_reports') {
+      if (activeMarketingPage === "visitor_reports") {
         return <VisitorReportsPage />;
       }
 
-      return <TagManagerPage tags={tagManagers} onCreate={() => goMarketing('tag_manager_create')} onEdit={(tag) => { setSelectedTagManager(tag); goMarketing('tag_manager_edit'); }} onDelete={deleteTagManager} />;
+      return (
+        <TagManagerPage
+          tags={tagManagers}
+          onCreate={() => goMarketing("tag_manager_create")}
+          onEdit={(tag) => {
+            setSelectedTagManager(tag);
+            goMarketing("tag_manager_edit");
+          }}
+          onDelete={deleteTagManager}
+        />
+      );
     }
-    if (activePage === 'blogs') {
-      const goBlogs = (page) => { setActivePage('blogs'); setActiveBlogsPage(page); };
+    if (activePage === "blogs") {
+      const goBlogs = (page) => {
+        setActivePage("blogs");
+        setActiveBlogsPage(page);
+      };
 
-      if (activeBlogsPage === 'blog') {
+      if (activeBlogsPage === "blog") {
         return (
           <BlogPage
             blogs={blogs}
-            onCreate={() => { setSelectedBlog(null); goBlogs('blog_create'); }}
-            onEdit={(blog) => { setSelectedBlog(blog); goBlogs('blog_edit'); }}
+            onCreate={() => {
+              setSelectedBlog(null);
+              goBlogs("blog_create");
+            }}
+            onEdit={(blog) => {
+              setSelectedBlog(blog);
+              goBlogs("blog_edit");
+            }}
             onDelete={deleteBlog}
           />
         );
       }
 
-      if (activeBlogsPage === 'blog_create') {
-        return (
-          <BlogFormPage
-            onSave={saveBlog}
-            onNavigate={goBlogs}
-          />
-        );
+      if (activeBlogsPage === "blog_create") {
+        return <BlogFormPage onSave={saveBlog} onNavigate={goBlogs} />;
       }
 
-      if (activeBlogsPage === 'blog_edit' && selectedBlog) {
+      if (activeBlogsPage === "blog_edit" && selectedBlog) {
         return (
           <BlogFormPage
             mode="edit"
             blog={selectedBlog}
             onSave={saveBlog}
-            onNavigate={(page) => { setSelectedBlog(null); goBlogs(page); }}
+            onNavigate={(page) => {
+              setSelectedBlog(null);
+              goBlogs(page);
+            }}
           />
         );
       }
 
-      return <BlogPage blogs={blogs} onCreate={() => goBlogs('blog_create')} onEdit={(blog) => { setSelectedBlog(blog); goBlogs('blog_edit'); }} onDelete={deleteBlog} />;
+      return (
+        <BlogPage
+          blogs={blogs}
+          onCreate={() => goBlogs("blog_create")}
+          onEdit={(blog) => {
+            setSelectedBlog(blog);
+            goBlogs("blog_edit");
+          }}
+          onDelete={deleteBlog}
+        />
+      );
     }
-    if (activePage === 'banner') {
-      const goBanner = (page) => { setActivePage('banner'); setActiveBannerPage(page); };
+    if (activePage === "banner") {
+      const goBanner = (page) => {
+        setActivePage("banner");
+        setActiveBannerPage(page);
+      };
 
-      if (activeBannerPage === 'banner_category') {
+      if (activeBannerPage === "banner_category") {
         return (
           <BannerCategoryPage
             categories={bannerCategories}
-            onCreate={() => { setSelectedBannerCategory(null); goBanner('banner_category_create'); }}
-            onEdit={(category) => { setSelectedBannerCategory(category); goBanner('banner_category_edit'); }}
+            onCreate={() => {
+              setSelectedBannerCategory(null);
+              goBanner("banner_category_create");
+            }}
+            onEdit={(category) => {
+              setSelectedBannerCategory(category);
+              goBanner("banner_category_edit");
+            }}
             onToggleStatus={toggleBannerCategoryStatus}
           />
         );
       }
 
-      if (activeBannerPage === 'banner_category_create') {
+      if (activeBannerPage === "banner_category_create") {
         return (
           <BannerCategoryFormPage
             onSave={saveBannerCategory}
@@ -1427,30 +2042,42 @@ function App() {
         );
       }
 
-      if (activeBannerPage === 'banner_category_edit' && selectedBannerCategory) {
+      if (
+        activeBannerPage === "banner_category_edit" &&
+        selectedBannerCategory
+      ) {
         return (
           <BannerCategoryFormPage
             mode="edit"
             category={selectedBannerCategory}
             onSave={saveBannerCategory}
-            onNavigate={(page) => { setSelectedBannerCategory(null); goBanner(page); }}
+            onNavigate={(page) => {
+              setSelectedBannerCategory(null);
+              goBanner(page);
+            }}
           />
         );
       }
 
-      if (activeBannerPage === 'banner_ads') {
+      if (activeBannerPage === "banner_ads") {
         return (
           <BannerAdsPage
             banners={banners}
-            onCreate={() => { setSelectedBanner(null); goBanner('banner_ads_create'); }}
-            onEdit={(banner) => { setSelectedBanner(banner); goBanner('banner_ads_edit'); }}
+            onCreate={() => {
+              setSelectedBanner(null);
+              goBanner("banner_ads_create");
+            }}
+            onEdit={(banner) => {
+              setSelectedBanner(banner);
+              goBanner("banner_ads_edit");
+            }}
             onDelete={deleteBanner}
             onToggleStatus={toggleBannerStatus}
           />
         );
       }
 
-      if (activeBannerPage === 'banner_ads_create') {
+      if (activeBannerPage === "banner_ads_create") {
         return (
           <BannerAdsFormPage
             categories={bannerCategories}
@@ -1460,34 +2087,56 @@ function App() {
         );
       }
 
-      if (activeBannerPage === 'banner_ads_edit' && selectedBanner) {
+      if (activeBannerPage === "banner_ads_edit" && selectedBanner) {
         return (
           <BannerAdsFormPage
             mode="edit"
             banner={selectedBanner}
             categories={bannerCategories}
             onSave={saveBanner}
-            onNavigate={(page) => { setSelectedBanner(null); goBanner(page); }}
+            onNavigate={(page) => {
+              setSelectedBanner(null);
+              goBanner(page);
+            }}
           />
         );
       }
 
-      return <BannerCategoryPage categories={bannerCategories} onCreate={() => goBanner('banner_category_create')} onEdit={(category) => { setSelectedBannerCategory(category); goBanner('banner_category_edit'); }} onToggleStatus={toggleBannerCategoryStatus} />;
+      return (
+        <BannerCategoryPage
+          categories={bannerCategories}
+          onCreate={() => goBanner("banner_category_create")}
+          onEdit={(category) => {
+            setSelectedBannerCategory(category);
+            goBanner("banner_category_edit");
+          }}
+          onToggleStatus={toggleBannerCategoryStatus}
+        />
+      );
     }
-    if (activePage === 'expense') {
-      const goExpense = (page) => { setActivePage('expense'); setActiveExpensePage(page); };
+    if (activePage === "expense") {
+      const goExpense = (page) => {
+        setActivePage("expense");
+        setActiveExpensePage(page);
+      };
 
-      if (activeExpensePage === 'expense_categories') {
+      if (activeExpensePage === "expense_categories") {
         return (
           <ExpenseCategoryPage
             categories={expenseCategories}
-            onCreate={() => { setSelectedExpenseCategory(null); goExpense('expense_category_create'); }}
-            onEdit={(category) => { setSelectedExpenseCategory(category); goExpense('expense_category_edit'); }}
+            onCreate={() => {
+              setSelectedExpenseCategory(null);
+              goExpense("expense_category_create");
+            }}
+            onEdit={(category) => {
+              setSelectedExpenseCategory(category);
+              goExpense("expense_category_edit");
+            }}
           />
         );
       }
 
-      if (activeExpensePage === 'expense_category_create') {
+      if (activeExpensePage === "expense_category_create") {
         return (
           <ExpenseCategoryFormPage
             onSave={saveExpenseCategory}
@@ -1496,29 +2145,41 @@ function App() {
         );
       }
 
-      if (activeExpensePage === 'expense_category_edit' && selectedExpenseCategory) {
+      if (
+        activeExpensePage === "expense_category_edit" &&
+        selectedExpenseCategory
+      ) {
         return (
           <ExpenseCategoryFormPage
             mode="edit"
             category={selectedExpenseCategory}
             onSave={saveExpenseCategory}
-            onNavigate={(page) => { setSelectedExpenseCategory(null); goExpense(page); }}
+            onNavigate={(page) => {
+              setSelectedExpenseCategory(null);
+              goExpense(page);
+            }}
           />
         );
       }
 
-      if (activeExpensePage === 'expense') {
+      if (activeExpensePage === "expense") {
         return (
           <ExpensePage
             expenses={expenses}
-            onCreate={() => { setSelectedExpense(null); goExpense('expense_create'); }}
-            onEdit={(expense) => { setSelectedExpense(expense); goExpense('expense_edit'); }}
+            onCreate={() => {
+              setSelectedExpense(null);
+              goExpense("expense_create");
+            }}
+            onEdit={(expense) => {
+              setSelectedExpense(expense);
+              goExpense("expense_edit");
+            }}
             onDelete={deleteExpense}
           />
         );
       }
 
-      if (activeExpensePage === 'expense_create') {
+      if (activeExpensePage === "expense_create") {
         return (
           <ExpenseFormPage
             categories={expenseCategories}
@@ -1528,22 +2189,36 @@ function App() {
         );
       }
 
-      if (activeExpensePage === 'expense_edit' && selectedExpense) {
+      if (activeExpensePage === "expense_edit" && selectedExpense) {
         return (
           <ExpenseFormPage
             mode="edit"
             expense={selectedExpense}
             categories={expenseCategories}
             onSave={saveExpense}
-            onNavigate={(page) => { setSelectedExpense(null); goExpense(page); }}
+            onNavigate={(page) => {
+              setSelectedExpense(null);
+              goExpense(page);
+            }}
           />
         );
       }
 
-      return <ExpenseCategoryPage categories={expenseCategories} onCreate={() => goExpense('expense_category_create')} onEdit={(category) => { setSelectedExpenseCategory(category); goExpense('expense_category_edit'); }} />;
+      return (
+        <ExpenseCategoryPage
+          categories={expenseCategories}
+          onCreate={() => goExpense("expense_category_create")}
+          onEdit={(category) => {
+            setSelectedExpenseCategory(category);
+            goExpense("expense_category_edit");
+          }}
+        />
+      );
     }
-    if (activePage === 'reports') {
-      return <ReportsPage key={activeReportsPage} reportKey={activeReportsPage} />;
+    if (activePage === "reports") {
+      return (
+        <ReportsPage key={activeReportsPage} reportKey={activeReportsPage} />
+      );
     }
     return <Dashboard />;
   }
@@ -1585,7 +2260,11 @@ function App() {
         siteSettings={siteSettings}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopNav siteSettings={siteSettings} />
+        <TopNav
+          siteSettings={siteSettings}
+          onQuickNavigate={handleQuickNavigate}
+          onNotificationNavigate={handleNotificationNavigate}
+        />
         {renderMain()}
       </div>
     </div>

@@ -40,8 +40,12 @@ export default function LoginPage() {
           <div className="w-20 h-20 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
             <ShoppingBag size={40} className="text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-3">Wazih Dashboard</h1>
-          <p className="text-slate-400 text-lg mb-10">Complete E-Commerce Management System</p>
+          <h1 className="text-4xl font-bold text-white mb-3">
+            Wazih Commerce Dashboard
+          </h1>
+          <p className="text-slate-400 text-lg mb-10">
+            Complete E-Commerce Management System
+          </p>
 
           <div className="grid grid-cols-3 gap-4 text-center">
             {[
@@ -49,8 +53,13 @@ export default function LoginPage() {
               { label: "Products", value: "Control" },
               { label: "Reports", value: "Analyze" },
             ].map((item) => (
-              <div key={item.label} className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10">
-                <p className="text-orange-400 font-semibold text-sm">{item.value}</p>
+              <div
+                key={item.label}
+                className="bg-white/5 backdrop-blur rounded-xl p-4 border border-white/10"
+              >
+                <p className="text-orange-400 font-semibold text-sm">
+                  {item.value}
+                </p>
                 <p className="text-slate-400 text-xs mt-1">{item.label}</p>
               </div>
             ))}
@@ -66,12 +75,18 @@ export default function LoginPage() {
             <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
               <ShoppingBag size={20} className="text-white" />
             </div>
-            <span className="text-xl font-bold text-slate-800">Wazih Dashboard</span>
+            <span className="text-xl font-bold text-slate-800">
+              Wazih Commerce Dashboard
+            </span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-            <p className="text-gray-500 text-sm mb-8">Sign in to your admin account</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              Welcome back
+            </h2>
+            <p className="text-gray-500 text-sm mb-8">
+              Sign in to your admin account
+            </p>
 
             {error && (
               <div className="mb-5 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
@@ -140,9 +155,24 @@ export default function LoginPage() {
                 className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold py-2.5 rounded-lg transition text-sm"
               >
                 {loading ? (
-                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
                   </svg>
                 ) : (
                   <LogIn size={16} />

@@ -1,4 +1,4 @@
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer } from "lucide-react";
 
 export default function InvoicePage({ order, onBack }) {
   if (!order) return null;
@@ -37,17 +37,26 @@ export default function InvoicePage({ order, onBack }) {
       {/* ── Invoice Card ── */}
       <div className="max-w-3xl mx-auto my-6 px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden invoice-card">
-
           {/* ── Header: Logo + Barcode ── */}
           <div className="flex items-start justify-between px-8 pt-8 pb-4">
             {/* Logo */}
             <div className="flex-shrink-0">
               <div
                 className="w-28 h-28 rounded-full flex flex-col items-center justify-center shadow-lg border-4 border-yellow-400"
-                style={{ background: 'radial-gradient(circle at 40% 40%, #1a1a2e, #0d0d1a)' }}
+                style={{
+                  background:
+                    "radial-gradient(circle at 40% 40%, #1a1a2e, #0d0d1a)",
+                }}
               >
-                <span className="text-yellow-400 text-2xl font-bold" style={{ fontFamily: 'serif' }}>وجيه</span>
-                <span className="text-yellow-300 text-xs font-semibold tracking-wider mt-0.5">Wazih</span>
+                <span
+                  className="text-yellow-400 text-2xl font-bold"
+                  style={{ fontFamily: "serif" }}
+                >
+                  وجيه
+                </span>
+                <span className="text-yellow-300 text-xs font-semibold tracking-wider mt-0.5">
+                  Wazih Commerce
+                </span>
               </div>
             </div>
 
@@ -67,10 +76,14 @@ export default function InvoicePage({ order, onBack }) {
                 })}
               </div>
               <div className="text-xs text-gray-700 mt-1">
-                ইনভয়েস আইডি : <span className="font-bold">#{order.orderId.replace('WZ-', '0000')}</span>
+                ইনভয়েস আইডি :{" "}
+                <span className="font-bold">
+                  #{order.orderId.replace("WZ-", "0000")}
+                </span>
               </div>
               <div className="text-xs text-gray-700 mt-0.5">
-                অর্ডার টাইম : <span className="font-semibold">{order.date}</span>
+                অর্ডার টাইম :{" "}
+                <span className="font-semibold">{order.date}</span>
               </div>
             </div>
           </div>
@@ -79,24 +92,31 @@ export default function InvoicePage({ order, onBack }) {
           <div className="grid grid-cols-2 gap-6 px-8 py-4 border-t border-gray-100">
             {/* Seller */}
             <div>
-              <div className="text-sm font-bold text-gray-800 mb-2">বিক্রেতা</div>
+              <div className="text-sm font-bold text-gray-800 mb-2">
+                বিক্রেতা
+              </div>
               <div className="text-sm text-gray-700 leading-relaxed space-y-0.5">
-                <div className="font-semibold">Wazih</div>
-                <div>wazihpremium@gmail.com</div>
-                <div>01992700600</div>
+                <div className="font-semibold">Wazih Commerce</div>
+                <div>homzify@gmail.com</div>
+                <div>01518301098</div>
                 <div className="text-xs text-gray-500 leading-snug">
-                  500/3 - C (খিলগাঁও মডেল কলেজের পিছনের রাস্তা), খিলগাঁও ঢাকা ১২১৯
+                  500/3 - C (খিলগাঁও মডেল কলেজের পিছনের রাস্তা), খিলগাঁও ঢাকা
+                  ১২১৯
                 </div>
               </div>
             </div>
 
             {/* Delivery Address */}
             <div className="text-right">
-              <div className="text-sm font-bold text-gray-800 mb-2">পণ্য ডেলিভারির ঠিকানা</div>
+              <div className="text-sm font-bold text-gray-800 mb-2">
+                পণ্য ডেলিভারির ঠিকানা
+              </div>
               <div className="text-sm text-gray-700 leading-relaxed space-y-0.5">
                 <div className="font-semibold">{order.customer.name}</div>
                 <div>{order.customer.phone}</div>
-                <div>{order.customer.area}, {order.customer.district}</div>
+                <div>
+                  {order.customer.area}, {order.customer.district}
+                </div>
               </div>
             </div>
           </div>
@@ -106,10 +126,18 @@ export default function InvoicePage({ order, onBack }) {
             <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">ছবি</th>
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">বিবরণ</th>
-                  <th className="px-4 py-2.5 text-center text-gray-600 font-semibold">পরিমান</th>
-                  <th className="px-4 py-2.5 text-right text-gray-600 font-semibold">মোট মূল্য</th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    ছবি
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    বিবরণ
+                  </th>
+                  <th className="px-4 py-2.5 text-center text-gray-600 font-semibold">
+                    পরিমান
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-gray-600 font-semibold">
+                    মোট মূল্য
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -120,8 +148,12 @@ export default function InvoicePage({ order, onBack }) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800">{order.product}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">Size: 12ml</div>
+                    <div className="font-medium text-gray-800">
+                      {order.product}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      Size: 12ml
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center text-gray-700">
                     {order.qty} × {order.bill}৳
@@ -137,7 +169,12 @@ export default function InvoicePage({ order, onBack }) {
                 <SummaryRow label="ছাড় (-)" value={`${discount}৳`} />
                 <SummaryRow label="পরিশোধ যোগ্য" value={`${payable}৳`} bold />
                 <SummaryRow label="পরিশোধ" value={`${paid}৳`} />
-                <SummaryRow label="বাকি" value={`${remaining}৳`} bold highlight />
+                <SummaryRow
+                  label="বাকি"
+                  value={`${remaining}৳`}
+                  bold
+                  highlight
+                />
               </tbody>
             </table>
           </div>
@@ -147,14 +184,27 @@ export default function InvoicePage({ order, onBack }) {
             <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {['Transaction Date', 'Payment Getway', 'Transaction ID', 'Account Number', 'Amount'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-gray-600 font-semibold text-xs">{h}</th>
+                  {[
+                    "Transaction Date",
+                    "Payment Getway",
+                    "Transaction ID",
+                    "Account Number",
+                    "Amount",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-2.5 text-left text-gray-600 font-semibold text-xs"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-2.5 text-xs text-gray-700">{order.date}</td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700">
+                    {order.date}
+                  </td>
                   <td className="px-4 py-2.5 text-xs text-gray-700">Bkash</td>
                   <td className="px-4 py-2.5 text-xs text-gray-400">—</td>
                   <td className="px-4 py-2.5 text-xs text-gray-400">—</td>
@@ -170,7 +220,8 @@ export default function InvoicePage({ order, onBack }) {
               Terms &amp; Conditions
             </div>
             <div className="text-xs text-gray-500 mt-1.5">
-              * This is a computer generated invoice, does not require any signature.
+              * This is a computer generated invoice, does not require any
+              signature.
             </div>
           </div>
         </div>
@@ -190,12 +241,16 @@ export default function InvoicePage({ order, onBack }) {
 
 function SummaryRow({ label, value, bold, highlight }) {
   return (
-    <tr className={`border-b border-gray-100 ${highlight ? 'bg-teal-50' : ''}`}>
+    <tr className={`border-b border-gray-100 ${highlight ? "bg-teal-50" : ""}`}>
       <td colSpan={2} />
-      <td className={`px-4 py-2 text-sm ${bold ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+      <td
+        className={`px-4 py-2 text-sm ${bold ? "font-semibold text-gray-800" : "text-gray-600"}`}
+      >
         {label}
       </td>
-      <td className={`px-4 py-2 text-right text-sm ${bold ? 'font-bold text-gray-900' : 'text-gray-700'} ${highlight ? 'text-teal-700' : ''}`}>
+      <td
+        className={`px-4 py-2 text-right text-sm ${bold ? "font-bold text-gray-900" : "text-gray-700"} ${highlight ? "text-teal-700" : ""}`}
+      >
         {value}
       </td>
     </tr>

@@ -39,7 +39,7 @@ export function normalizeOrderStatuses(rows) {
   return source
     .map((row, index) => {
       const label = row.label || row.name || row.key || '';
-      const key = row.key || toOrderStatusKey(label);
+      const key = toOrderStatusKey(row.key || label);
       const fallback = fallbackByKey[key] || {};
       const tone = PALETTE[index % PALETTE.length];
       return {

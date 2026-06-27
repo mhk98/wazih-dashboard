@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { orderService } from "../services/orderService";
+import { toOrderStatusKey } from "../utils/orderStatuses";
+
+function normalizeStatusCounts(counts = {}) {
+  return Object.entries(counts).reduce((acc, [status, count]) => {
+    const key = status === "all" ? "all" : toOrderStatusKey(status);
+    acc[key] = (acc[key] || 0) + Number(count || 0);
+    return acc;
+  }, {});
+}
 
 export function useOrders({ status, search, fromDate, toDate, page, limit = 20 }) {
   const [orders, setOrders] = useState([]);
@@ -52,7 +61,7 @@ export function useOrderStatusCounts(isAuthenticated = true) {
     setLoading(true);
     try {
       const res = await orderService.getStatusCounts();
-      setCounts(res.data || {});
+      setCounts(normalizeStatusCounts(res.data || {}));
     } catch {
       // silent fail — sidebar badge will just show 0
     } finally {

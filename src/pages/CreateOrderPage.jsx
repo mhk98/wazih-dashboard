@@ -1,66 +1,114 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
-  Search, Minus, Plus, X, ShoppingCart, LayoutDashboard,
-  ShoppingBag, Trash2, ChevronDown, ChevronRight, PlayCircle,
-} from 'lucide-react';
-import { useProducts } from '../hooks/useProducts';
-import { orderService } from '../services/orderService';
+  Search,
+  Minus,
+  Plus,
+  X,
+  ShoppingCart,
+  LayoutDashboard,
+  ShoppingBag,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  PlayCircle,
+} from "lucide-react";
+import {
+  useCategories,
+  useChildcategories,
+  useProducts,
+  useSubcategories,
+} from "../hooks/useProducts";
+import { orderService } from "../services/orderService";
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const ASSET_BASE_URL =
+  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ||
+  "http://localhost:5000";
 
 // ── Delivery areas ─────────────────────────────────────────
 const deliveryAreas = [
-  { label: 'ঢাকার ভিতরে ৮০ টাকা', fee: 80 },
-  { label: 'ঢাকার বাইরে ১২০ টাকা', fee: 120 },
-  { label: 'চট্টগ্রাম ১৫০ টাকা', fee: 150 },
-  { label: 'সিলেট ১৫০ টাকা', fee: 150 },
-  { label: 'রাজশাহী ১৩০ টাকা', fee: 130 },
-  { label: 'খুলনা ১৩০ টাকা', fee: 130 },
-];
-
-// ── Category filters ────────────────────────────────────────
-const categories = [
-  { key: 'all', label: 'All', sub: [] },
-  { key: 'new', label: 'NEW ARRIVALS', sub: [] },
-  { key: 'attar', label: 'ATTAR & OILS', sub: ['ATTAR TYPES', 'OUD & CLASSIC'] },
-  { key: 'perfumes', label: 'PERFUMES', sub: [] },
-  { key: 'special', label: 'SPECIAL OFFERS', sub: [] },
-  { key: 'brand', label: 'BY BRAND', sub: [] },
+  { label: "ঢাকার ভিতরে ৮০ টাকা", fee: 80 },
+  { label: "ঢাকার বাইরে ১২০ টাকা", fee: 120 },
+  { label: "চট্টগ্রাম ১৫০ টাকা", fee: 150 },
+  { label: "সিলেট ১৫০ টাকা", fee: 150 },
+  { label: "রাজশাহী ১৩০ টাকা", fee: 130 },
+  { label: "খুলনা ১৩০ টাকা", fee: 130 },
 ];
 
 // ── Product images placeholder colors ───────────────────────
 const imgGradients = [
-  'from-amber-100 to-yellow-200',
-  'from-orange-100 to-amber-200',
-  'from-yellow-100 to-orange-100',
-  'from-red-100 to-orange-200',
-  'from-amber-200 to-yellow-300',
-  'from-orange-200 to-red-100',
+  "from-amber-100 to-yellow-200",
+  "from-orange-100 to-amber-200",
+  "from-yellow-100 to-orange-100",
+  "from-red-100 to-orange-200",
+  "from-amber-200 to-yellow-300",
+  "from-orange-200 to-red-100",
 ];
+
+function parseImages(images) {
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return images ? [images] : [];
+    }
+  }
+  return [];
+}
+
+function imageValue(image) {
+  if (!image) return "";
+  if (typeof image === "string") return image;
+  return (
+    image.url || image.file || image.filename || image.name || image.path || ""
+  );
+}
+
+function productImageSrc(image) {
+  const src = imageValue(image).trim();
+  if (!src) return "";
+  if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
+  if (src.startsWith("/")) return `${ASSET_BASE_URL}${src}`;
+  return `${ASSET_BASE_URL}/images/${src}`;
+}
+
+function toId(value) {
+  return value === undefined || value === null ? "" : String(value);
+}
 
 export default function CreateOrderPage({ onNavigate }) {
   // Cart state
   const [cart, setCart] = useState([]);
   // Customer
   const [isGuest, setIsGuest] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [phone, setPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [areaIdx, setAreaIdx] = useState(0);
-  const [discount, setDiscount] = useState('');
-  const [advanced, setAdvanced] = useState('');
+  const [discount, setDiscount] = useState("");
+  const [advanced, setAdvanced] = useState("");
   // Product search / filter
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [expandedCat, setExpandedCat] = useState(null);
+  const [expandedSub, setExpandedSub] = useState(null);
 
   // API products
-  const { data: rawProducts, loading: productsLoading } = useProducts({ limit: 500 });
+  const { data: rawProducts, loading: productsLoading } = useProducts({
+    limit: 500,
+  });
+  const { data: rawCategories } = useCategories({ limit: 500 });
+  const { data: rawSubcategories } = useSubcategories({ limit: 500 });
+  const { data: rawChildcategories } = useChildcategories({ limit: 500 });
 
   // ── Cart helpers ──────────────────────────────────────────
   function addToCart(product) {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === product.id);
-      if (existing) return prev.map((i) => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+      if (existing)
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, qty: i.qty + 1 } : i,
+        );
       return [...prev, { ...product, qty: 1, disc: 0 }];
     });
   }
@@ -71,31 +119,40 @@ export default function CreateOrderPage({ onNavigate }) {
 
   function changeQty(id, delta) {
     setCart((prev) =>
-      prev.map((i) => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i)
+      prev.map((i) =>
+        i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i,
+      ),
     );
   }
 
   function changeDisc(id, val) {
-    setCart((prev) => prev.map((i) => i.id === id ? { ...i, disc: Number(val) || 0 } : i));
+    setCart((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, disc: Number(val) || 0 } : i)),
+    );
   }
 
-  function clearCart() { setCart([]); }
+  function clearCart() {
+    setCart([]);
+  }
 
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
     if (cart.length === 0) return;
-    if (!isGuest && !phone.trim()) { alert('Phone number দিন'); return; }
+    if (!isGuest && !phone.trim()) {
+      alert("Phone number দিন");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const productName = cart.map(i => `${i.name} x${i.qty}`).join(', ');
+      const productName = cart.map((i) => `${i.name} x${i.qty}`).join(", ");
       const productImage = cart[0]?.images?.[0] || null;
       const quantity = cart.reduce((sum, i) => sum + i.qty, 0);
 
       const payload = {
-        customerName: isGuest ? 'Guest' : (customerName.trim() || 'Guest'),
-        customerPhone: isGuest ? 'Guest' : phone.trim(),
+        customerName: isGuest ? "Guest" : customerName.trim() || "Guest",
+        customerPhone: isGuest ? "Guest" : phone.trim(),
         customerArea: deliveryAreas[areaIdx].label,
         productName,
         productImage,
@@ -106,43 +163,84 @@ export default function CreateOrderPage({ onNavigate }) {
       };
 
       await orderService.createOrder(payload);
-      alert('Order সফলভাবে তৈরি হয়েছে!');
+      alert("Order সফলভাবে তৈরি হয়েছে!");
       clearCart();
-      onNavigate && onNavigate('orders');
+      onNavigate && onNavigate("orders");
     } catch (err) {
-      alert(err.message || 'Order তৈরি করতে সমস্যা হয়েছে');
+      alert(err.message || "Order তৈরি করতে সমস্যা হয়েছে");
     } finally {
       setSubmitting(false);
     }
   }
 
   // ── Calculations ──────────────────────────────────────────
-  const subTotal = cart.reduce((sum, i) => sum + (i.price * i.qty) - i.disc, 0);
+  const subTotal = cart.reduce((sum, i) => sum + i.price * i.qty - i.disc, 0);
   const shippingFee = deliveryAreas[areaIdx].fee;
   const discountAmt = Number(discount) || 0;
   const paidAmt = Number(advanced) || 0;
   const total = subTotal + shippingFee - discountAmt;
 
+  const categoryTree = useMemo(() => {
+    const childrenBySub = rawChildcategories.reduce((acc, child) => {
+      const subcategoryId = toId(child.subcategoryId || child.subcategory?.Id);
+      if (!subcategoryId) return acc;
+      acc[subcategoryId] = acc[subcategoryId] || [];
+      acc[subcategoryId].push(child);
+      return acc;
+    }, {});
+    const subsByCategory = rawSubcategories.reduce((acc, sub) => {
+      const categoryId = toId(sub.categoryId || sub.category?.Id);
+      if (!categoryId) return acc;
+      acc[categoryId] = acc[categoryId] || [];
+      acc[categoryId].push({
+        ...sub,
+        children: childrenBySub[toId(sub.Id)] || [],
+      });
+      return acc;
+    }, {});
+
+    return rawCategories.map((category) => ({
+      ...category,
+      children: subsByCategory[toId(category.Id)] || [],
+    }));
+  }, [rawCategories, rawSubcategories, rawChildcategories]);
+
   // ── Product list ──────────────────────────────────────────
   const filteredProducts = useMemo(() => {
-    const parseImages = (images) => {
-      if (Array.isArray(images)) return images;
-      if (typeof images === 'string') { try { return JSON.parse(images); } catch { return []; } }
-      return [];
-    };
-    const mapped = rawProducts.map((p) => ({
-      id: p.Id,
-      name: p.name,
-      brand: '',
-      price: Number(p.variations?.[0]?.newPrice || 0),
-      stock: p.variations?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) ?? 0,
-      sku: p.sku || p.variations?.[0]?.sku || '',
-      images: parseImages(p.images),
-    }));
-    if (!search.trim()) return mapped;
-    const q = search.toLowerCase();
-    return mapped.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
-  }, [rawProducts, search]);
+    const mapped = rawProducts.map((p) => {
+      const images = parseImages(p.images).map(imageValue).filter(Boolean);
+      return {
+        id: p.Id,
+        name: p.name,
+        brand: p.brand?.name || p.brandName || "",
+        price: Number(
+          p.variations?.[0]?.newPrice || p.variations?.[0]?.price || 0,
+        ),
+        stock:
+          p.variations?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) ??
+          0,
+        sku: p.sku || p.variations?.[0]?.sku || "",
+        categoryId: toId(p.categoryId || p.category?.Id),
+        subcategoryId: toId(p.subcategoryId || p.subcategory?.Id),
+        childcategoryId: toId(p.childcategoryId || p.childcategory?.Id),
+        images,
+      };
+    });
+    const q = search.trim().toLowerCase();
+    return mapped.filter((product) => {
+      const matchesSearch =
+        !q ||
+        product.name.toLowerCase().includes(q) ||
+        product.sku.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      if (activeCategory === "all") return true;
+      const [type, id] = activeCategory.split(":");
+      if (type === "category") return product.categoryId === id;
+      if (type === "subcategory") return product.subcategoryId === id;
+      if (type === "childcategory") return product.childcategoryId === id;
+      return true;
+    });
+  }, [rawProducts, search, activeCategory]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-gray-50">
@@ -150,14 +248,14 @@ export default function CreateOrderPage({ onNavigate }) {
       <div className="bg-white border-b border-gray-200 flex items-center justify-between px-4 py-2 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onNavigate('dashboard')}
+            onClick={() => onNavigate("dashboard")}
             className="flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
           >
             <LayoutDashboard size={14} />
             Dashboard
           </button>
           <button
-            onClick={() => onNavigate('orders')}
+            onClick={() => onNavigate("orders")}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
           >
             <ShoppingBag size={14} />
@@ -173,7 +271,9 @@ export default function CreateOrderPage({ onNavigate }) {
         </div>
         <div className="flex items-center gap-3">
           <button className="relative p-1">
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">29</span>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+              29
+            </span>
             <div className="w-5 h-5 text-gray-500">🔔</div>
           </button>
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-500" />
@@ -182,7 +282,6 @@ export default function CreateOrderPage({ onNavigate }) {
 
       {/* ── Page Body ── */}
       <div className="flex flex-1 overflow-hidden">
-
         {/* ════ LEFT PANEL ════ */}
         <div className="w-[520px] flex-shrink-0 flex flex-col overflow-y-auto border-r border-gray-200 bg-white">
           {/* Title */}
@@ -198,18 +297,35 @@ export default function CreateOrderPage({ onNavigate }) {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr style={{ background: 'linear-gradient(90deg, #14b8a6, #0ea5e9)' }}>
-                  <th className="px-3 py-2.5 text-left text-white font-semibold">Product</th>
-                  <th className="px-3 py-2.5 text-left text-white font-semibold">Details</th>
-                  <th className="px-3 py-2.5 text-center text-white font-semibold">Quantity</th>
-                  <th className="px-3 py-2.5 text-center text-white font-semibold">Discount</th>
-                  <th className="px-3 py-2.5 text-right text-white font-semibold">Total</th>
+                <tr
+                  style={{
+                    background: "linear-gradient(90deg, #14b8a6, #0ea5e9)",
+                  }}
+                >
+                  <th className="px-3 py-2.5 text-left text-white font-semibold">
+                    Product
+                  </th>
+                  <th className="px-3 py-2.5 text-left text-white font-semibold">
+                    Details
+                  </th>
+                  <th className="px-3 py-2.5 text-center text-white font-semibold">
+                    Quantity
+                  </th>
+                  <th className="px-3 py-2.5 text-center text-white font-semibold">
+                    Discount
+                  </th>
+                  <th className="px-3 py-2.5 text-right text-white font-semibold">
+                    Total
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {cart.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-gray-400 text-xs">
+                    <td
+                      colSpan={5}
+                      className="text-center py-6 text-gray-400 text-xs"
+                    >
                       কোনো পণ্য যোগ করা হয়নি
                     </td>
                   </tr>
@@ -237,7 +353,9 @@ export default function CreateOrderPage({ onNavigate }) {
                 onChange={(e) => setIsGuest(e.target.checked)}
                 className="accent-teal-500 w-3.5 h-3.5"
               />
-              <span className="text-xs font-medium text-gray-700">Guest Customer</span>
+              <span className="text-xs font-medium text-gray-700">
+                Guest Customer
+              </span>
             </label>
 
             {!isGuest && (
@@ -274,10 +392,15 @@ export default function CreateOrderPage({ onNavigate }) {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-300 appearance-none pr-8"
               >
                 {deliveryAreas.map((a, i) => (
-                  <option key={i} value={i}>{a.label}</option>
+                  <option key={i} value={i}>
+                    {a.label}
+                  </option>
                 ))}
               </select>
-              <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={13}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
 
             {/* Shipping override */}
@@ -310,19 +433,24 @@ export default function CreateOrderPage({ onNavigate }) {
             {/* Summary */}
             <div className="border border-gray-100 rounded-lg overflow-hidden">
               {[
-                { label: 'Sub Total', value: subTotal },
-                { label: 'Shipping Fee (+)', value: shippingFee },
-                { label: 'Discount (-)', value: discountAmt },
-                { label: 'Paid (-)', value: paidAmt },
+                { label: "Sub Total", value: subTotal },
+                { label: "Shipping Fee (+)", value: shippingFee },
+                { label: "Discount (-)", value: discountAmt },
+                { label: "Paid (-)", value: paidAmt },
               ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between px-4 py-2 border-b border-gray-100 text-xs">
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between px-4 py-2 border-b border-gray-100 text-xs"
+                >
                   <span className="text-gray-600">{row.label}</span>
                   <span className="font-medium text-gray-800">{row.value}</span>
                 </div>
               ))}
               <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 text-xs">
                 <span className="font-bold text-gray-800">Total</span>
-                <span className="font-bold text-teal-600 text-sm">৳ {total}</span>
+                <span className="font-bold text-teal-600 text-sm">
+                  ৳ {total}
+                </span>
               </div>
             </div>
 
@@ -332,50 +460,112 @@ export default function CreateOrderPage({ onNavigate }) {
               disabled={cart.length === 0 || submitting}
               className="w-full bg-teal-500 hover:bg-teal-600 disabled:opacity-40 text-white font-semibold text-sm py-2.5 rounded-xl transition"
             >
-              {submitting ? 'তৈরি হচ্ছে...' : 'Order Submit'}
+              {submitting ? "তৈরি হচ্ছে..." : "Order Submit"}
             </button>
           </div>
         </div>
 
         {/* ════ RIGHT PANEL ════ */}
         <div className="flex flex-1 overflow-hidden">
-
           {/* Category sidebar */}
           <div className="w-40 flex-shrink-0 border-r border-gray-200 bg-white overflow-y-auto py-2">
-            {categories.map((cat) => (
-              <div key={cat.key}>
-                <div
-                  onClick={() => {
-                    setActiveCategory(cat.key);
-                    setExpandedCat(expandedCat === cat.key ? null : cat.key);
-                  }}
-                  className={`flex items-center justify-between px-3 py-2.5 cursor-pointer text-xs font-medium transition ${
-                    activeCategory === cat.key
-                      ? 'bg-teal-500 text-white'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  {cat.sub.length > 0 && (
-                    expandedCat === cat.key
-                      ? <ChevronDown size={12} />
-                      : <ChevronRight size={12} />
+            <div
+              onClick={() => {
+                setActiveCategory("all");
+                setExpandedCat(null);
+                setExpandedSub(null);
+              }}
+              className={`px-3 py-2.5 cursor-pointer text-xs font-medium transition ${
+                activeCategory === "all"
+                  ? "bg-teal-500 text-white"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              All
+            </div>
+            {categoryTree.map((cat) => {
+              const categoryKey = `category:${cat.Id}`;
+              const isExpanded = expandedCat === cat.Id;
+              return (
+                <div key={cat.Id}>
+                  <div
+                    onClick={() => {
+                      setActiveCategory(categoryKey);
+                      setExpandedCat(isExpanded ? null : cat.Id);
+                      setExpandedSub(null);
+                    }}
+                    className={`flex items-center justify-between px-3 py-2.5 cursor-pointer text-xs font-medium transition ${
+                      activeCategory === categoryKey
+                        ? "bg-teal-500 text-white"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    {cat.children.length > 0 &&
+                      (isExpanded ? (
+                        <ChevronDown size={12} />
+                      ) : (
+                        <ChevronRight size={12} />
+                      ))}
+                  </div>
+                  {cat.children.length > 0 && isExpanded && (
+                    <div className="bg-gray-50 border-l-2 border-teal-400 ml-3">
+                      {cat.children.map((sub) => {
+                        const subKey = `subcategory:${sub.Id}`;
+                        const isSubExpanded = expandedSub === sub.Id;
+                        return (
+                          <div key={sub.Id}>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCategory(subKey);
+                                setExpandedSub(isSubExpanded ? null : sub.Id);
+                              }}
+                              className={`flex items-center justify-between px-3 py-2 text-xs cursor-pointer transition ${
+                                activeCategory === subKey
+                                  ? "bg-teal-50 text-teal-700 font-semibold"
+                                  : "text-gray-600 hover:bg-teal-50 hover:text-teal-700"
+                              }`}
+                            >
+                              <span>{sub.name}</span>
+                              {sub.children.length > 0 &&
+                                (isSubExpanded ? (
+                                  <ChevronDown size={11} />
+                                ) : (
+                                  <ChevronRight size={11} />
+                                ))}
+                            </div>
+                            {sub.children.length > 0 && isSubExpanded && (
+                              <div className="ml-3 border-l border-teal-200">
+                                {sub.children.map((child) => {
+                                  const childKey = `childcategory:${child.Id}`;
+                                  return (
+                                    <div
+                                      key={child.Id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveCategory(childKey);
+                                      }}
+                                      className={`px-3 py-1.5 text-[11px] cursor-pointer transition ${
+                                        activeCategory === childKey
+                                          ? "text-teal-700 font-semibold"
+                                          : "text-gray-500 hover:text-teal-700"
+                                      }`}
+                                    >
+                                      {child.name}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                {cat.sub.length > 0 && expandedCat === cat.key && (
-                  <div className="bg-gray-50 border-l-2 border-teal-400 ml-3">
-                    {cat.sub.map((s) => (
-                      <div
-                        key={s}
-                        className="px-3 py-2 text-xs text-gray-600 cursor-pointer hover:bg-teal-50 hover:text-teal-700 transition"
-                      >
-                        {s}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Products area */}
@@ -390,7 +580,10 @@ export default function CreateOrderPage({ onNavigate }) {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 pr-10"
                 />
-                <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search
+                  size={16}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
               </div>
             </div>
 
@@ -425,7 +618,8 @@ export default function CreateOrderPage({ onNavigate }) {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 py-1.5 border-t border-gray-100 bg-white flex-shrink-0">
-        © Wazih <span className="text-blue-500 cursor-pointer">Websolution IT</span>
+        © Wazih Commerce{" "}
+        <span className="text-blue-500 cursor-pointer">DigitalEver</span>
       </div>
     </div>
   );
@@ -447,8 +641,12 @@ function CartRow({ item, onRemove, onQty, onDisc }) {
         </div>
       </td>
       <td className="px-3 py-2">
-        <div className="font-semibold text-gray-800 text-xs leading-tight max-w-[120px]">{item.name}</div>
-        <div className="text-gray-500 text-[10px] mt-0.5">৳ {item.price} × {item.qty}</div>
+        <div className="font-semibold text-gray-800 text-xs leading-tight max-w-[120px]">
+          {item.name}
+        </div>
+        <div className="text-gray-500 text-[10px] mt-0.5">
+          ৳ {item.price} × {item.qty}
+        </div>
         <span className="bg-teal-100 text-teal-700 text-[9px] font-bold px-1.5 py-0.5 rounded mt-0.5 inline-block">
           {item.sku}
         </span>
@@ -461,7 +659,9 @@ function CartRow({ item, onRemove, onQty, onDisc }) {
           >
             <Minus size={11} />
           </button>
-          <span className="w-6 text-center text-xs font-semibold">{item.qty}</span>
+          <span className="w-6 text-center text-xs font-semibold">
+            {item.qty}
+          </span>
           <button
             onClick={() => onQty(1)}
             className="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center transition"
@@ -480,7 +680,7 @@ function CartRow({ item, onRemove, onQty, onDisc }) {
         />
       </td>
       <td className="px-3 py-2 text-right font-bold text-gray-800 text-xs whitespace-nowrap">
-        ৳ {(item.price * item.qty) - item.disc}
+        ৳ {item.price * item.qty - item.disc}
       </td>
     </tr>
   );
@@ -492,14 +692,18 @@ function ProductCard({ product, gradient, inCart, onAdd }) {
     <div
       onClick={onAdd}
       className={`bg-white rounded-xl border cursor-pointer transition-all duration-150 overflow-hidden group ${
-        inCart ? 'border-teal-400 shadow-md shadow-teal-100' : 'border-gray-200 hover:border-teal-300 hover:shadow-md'
+        inCart
+          ? "border-teal-400 shadow-md shadow-teal-100"
+          : "border-gray-200 hover:border-teal-300 hover:shadow-md"
       }`}
     >
       {/* Image area */}
-      <div className={`relative bg-gradient-to-br ${gradient} h-28 flex items-center justify-center`}>
+      <div
+        className={`relative bg-gradient-to-br ${gradient} h-28 flex items-center justify-center`}
+      >
         {product.images?.[0] ? (
           <img
-            src={`${BASE_URL}/images/${product.images[0]}`}
+            src={productImageSrc(product.images[0])}
             alt={product.name}
             className="h-24 w-full object-contain"
           />
@@ -509,10 +713,17 @@ function ProductCard({ product, gradient, inCart, onAdd }) {
           </div>
         )}
         {/* Cart badge */}
-        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition ${
-          inCart ? 'bg-teal-500' : 'bg-white/80 group-hover:bg-teal-100'
-        }`}>
-          <ShoppingCart size={12} className={inCart ? 'text-white' : 'text-gray-500 group-hover:text-teal-600'} />
+        <div
+          className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition ${
+            inCart ? "bg-teal-500" : "bg-white/80 group-hover:bg-teal-100"
+          }`}
+        >
+          <ShoppingCart
+            size={12}
+            className={
+              inCart ? "text-white" : "text-gray-500 group-hover:text-teal-600"
+            }
+          />
         </div>
         {inCart && (
           <div className="absolute top-2 left-2 bg-teal-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
@@ -523,15 +734,23 @@ function ProductCard({ product, gradient, inCart, onAdd }) {
 
       {/* Info */}
       <div className="p-2">
-        <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide truncate">{product.brand}</div>
+        <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide truncate">
+          {product.brand}
+        </div>
         <div className="text-xs font-semibold text-gray-800 leading-tight mt-0.5 line-clamp-2 min-h-[28px]">
           {product.name}
         </div>
         <div className="flex items-center justify-between mt-1.5">
-          <span className="text-xs font-bold text-teal-600">৳ {product.price}</span>
-          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-            product.stock <= 4 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-          }`}>
+          <span className="text-xs font-bold text-teal-600">
+            ৳ {product.price}
+          </span>
+          <span
+            className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+              product.stock <= 4
+                ? "bg-red-100 text-red-600"
+                : "bg-green-100 text-green-600"
+            }`}
+          >
             Stock: {product.stock}
           </span>
         </div>

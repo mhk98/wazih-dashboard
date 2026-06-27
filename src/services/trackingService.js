@@ -1,49 +1,58 @@
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from "../utils/apiClient";
 
 let initializationPromise = null;
 let trackingConfig = { metaPixels: [], tiktokPixels: [], googleAds: [] };
 
 const META_EVENT_NAMES = {
-  PageView: 'PageView',
-  ViewContent: 'ViewContent',
-  InitiateCheckout: 'InitiateCheckout',
-  AddToCart: 'AddToCart',
-  Purchase: 'Purchase',
+  PageView: "PageView",
+  ViewContent: "ViewContent",
+  InitiateCheckout: "InitiateCheckout",
+  AddToCart: "AddToCart",
+  Purchase: "Purchase",
 };
 
 const TIKTOK_EVENT_NAMES = {
-  PageView: 'Pageview',
-  ViewContent: 'ViewContent',
-  InitiateCheckout: 'InitiateCheckout',
-  AddToCart: 'AddToCart',
-  Purchase: 'CompletePayment',
+  PageView: "Pageview",
+  ViewContent: "ViewContent",
+  InitiateCheckout: "InitiateCheckout",
+  AddToCart: "AddToCart",
+  Purchase: "CompletePayment",
 };
 
 function createEventId(eventName) {
-  if (globalThis.crypto?.randomUUID) return `${eventName}.${globalThis.crypto.randomUUID()}`;
+  if (globalThis.crypto?.randomUUID)
+    return `${eventName}.${globalThis.crypto.randomUUID()}`;
   return `${eventName}.${Date.now()}.${Math.random().toString(16).slice(2)}`;
 }
 
 function getCookie(name) {
-  if (typeof document === 'undefined') return '';
+  if (typeof document === "undefined") return "";
   const prefix = `${name}=`;
-  return document.cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix))?.slice(prefix.length) || '';
+  return (
+    document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(prefix))
+      ?.slice(prefix.length) || ""
+  );
 }
 
 function getClickData() {
-  if (typeof window === 'undefined') return {};
+  if (typeof window === "undefined") return {};
   const params = new URLSearchParams(window.location.search);
-  const fbclid = params.get('fbclid');
+  const fbclid = params.get("fbclid");
   return {
-    fbp: getCookie('_fbp') || undefined,
-    fbc: getCookie('_fbc') || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined),
-    ttp: getCookie('_ttp') || undefined,
-    ttclid: params.get('ttclid') || undefined,
+    fbp: getCookie("_fbp") || undefined,
+    fbc:
+      getCookie("_fbc") ||
+      (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined),
+    ttp: getCookie("_ttp") || undefined,
+    ttclid: params.get("ttclid") || undefined,
   };
 }
 
 function installMetaPixel() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   if (!window.fbq) {
     const fbq = function fbq(...args) {
       if (fbq.callMethod) fbq.callMethod(...args);
@@ -51,24 +60,41 @@ function installMetaPixel() {
     };
     fbq.push = fbq;
     fbq.loaded = true;
-    fbq.version = '2.0';
+    fbq.version = "2.0";
     fbq.queue = [];
     window.fbq = fbq;
     window._fbq = fbq;
   }
-  if (!document.querySelector('script[data-wazih-meta-pixel]')) {
-    const script = document.createElement('script');
+  if (!document.querySelector("script[data-homzify-meta-pixel]")) {
+    const script = document.createElement("script");
     script.async = true;
-    script.src = 'https://connect.facebook.net/en_US/fbevents.js';
-    script.dataset.wazihMetaPixel = 'true';
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    script.dataset.homzifyMetaPixel = "true";
     document.head.appendChild(script);
   }
 }
 
 function installTiktokPixel() {
-  if (typeof window === 'undefined' || window.ttq) return;
-  const ttq = window.ttq = [];
-  ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie', 'holdConsent', 'revokeConsent', 'grantConsent'];
+  if (typeof window === "undefined" || window.ttq) return;
+  const ttq = (window.ttq = []);
+  ttq.methods = [
+    "page",
+    "track",
+    "identify",
+    "instances",
+    "debug",
+    "on",
+    "off",
+    "once",
+    "ready",
+    "alias",
+    "group",
+    "enableCookie",
+    "disableCookie",
+    "holdConsent",
+    "revokeConsent",
+    "grantConsent",
+  ];
   ttq.setAndDefer = (target, method) => {
     target[method] = (...args) => target.push([method, ...args]);
   };
@@ -81,54 +107,68 @@ function installTiktokPixel() {
   ttq.load = (pixelCode, options = {}) => {
     ttq._i = ttq._i || {};
     ttq._i[pixelCode] = [];
-    ttq._i[pixelCode]._u = 'https://analytics.tiktok.com/i18n/pixel/events.js';
+    ttq._i[pixelCode]._u = "https://analytics.tiktok.com/i18n/pixel/events.js";
     ttq._t = ttq._t || {};
     ttq._t[pixelCode] = Date.now();
     ttq._o = ttq._o || {};
     ttq._o[pixelCode] = options;
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.async = true;
     script.src = `${ttq._i[pixelCode]._u}?sdkid=${encodeURIComponent(pixelCode)}&lib=ttq`;
-    script.dataset.wazihTiktokPixel = pixelCode;
+    script.dataset.homzifyTiktokPixel = pixelCode;
     document.head.appendChild(script);
   };
-};
+}
 
 function installGoogleTag(conversionId) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); };
-  if (!document.querySelector('script[data-wazih-google-tag]')) {
-    const script = document.createElement('script');
+  window.gtag =
+    window.gtag ||
+    function gtag() {
+      window.dataLayer.push(arguments);
+    };
+  if (!document.querySelector("script[data-homzify-google-tag]")) {
+    const script = document.createElement("script");
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(conversionId)}`;
-    script.dataset.wazihGoogleTag = 'true';
+    script.dataset.homzifyGoogleTag = "true";
     document.head.appendChild(script);
-    window.gtag('js', new Date());
+    window.gtag("js", new Date());
   }
 }
 
 export async function initializeTracking() {
   if (initializationPromise) return initializationPromise;
-  initializationPromise = apiRequest('/tracking/config')
+  initializationPromise = apiRequest("/tracking/config")
     .then((response) => {
       trackingConfig = {
-        metaPixels: Array.isArray(response?.data?.metaPixels) ? response.data.metaPixels : [],
-        tiktokPixels: Array.isArray(response?.data?.tiktokPixels) ? response.data.tiktokPixels : [],
-        googleAds: Array.isArray(response?.data?.googleAds) ? response.data.googleAds : [],
+        metaPixels: Array.isArray(response?.data?.metaPixels)
+          ? response.data.metaPixels
+          : [],
+        tiktokPixels: Array.isArray(response?.data?.tiktokPixels)
+          ? response.data.tiktokPixels
+          : [],
+        googleAds: Array.isArray(response?.data?.googleAds)
+          ? response.data.googleAds
+          : [],
       };
 
       if (trackingConfig.metaPixels.length) {
         installMetaPixel();
-        trackingConfig.metaPixels.forEach((pixel) => window.fbq('init', pixel.pixelsId));
+        trackingConfig.metaPixels.forEach((pixel) =>
+          window.fbq("init", pixel.pixelsId),
+        );
       }
       if (trackingConfig.tiktokPixels.length) {
         installTiktokPixel();
-        trackingConfig.tiktokPixels.forEach((pixel) => window.ttq.load(pixel.pixelCode));
+        trackingConfig.tiktokPixels.forEach((pixel) =>
+          window.ttq.load(pixel.pixelCode),
+        );
       }
       trackingConfig.googleAds.forEach((config, index) => {
         if (index === 0) installGoogleTag(config.conversionId);
-        window.gtag?.('config', config.conversionId);
+        window.gtag?.("config", config.conversionId);
       });
       return trackingConfig;
     })
@@ -142,35 +182,42 @@ export async function initializeTracking() {
 function trackInBrowser(eventName, eventId, customData) {
   const metaEventName = META_EVENT_NAMES[eventName] || eventName;
   trackingConfig.metaPixels.forEach((pixel) => {
-    window.fbq?.('trackSingle', pixel.pixelsId, metaEventName, customData, { eventID: eventId });
+    window.fbq?.("trackSingle", pixel.pixelsId, metaEventName, customData, {
+      eventID: eventId,
+    });
   });
 
   const tiktokEventName = TIKTOK_EVENT_NAMES[eventName] || eventName;
   trackingConfig.tiktokPixels.forEach((pixel) => {
-    window.ttq?.instance(pixel.pixelCode)?.track(tiktokEventName, { ...customData, event_id: eventId });
+    window.ttq
+      ?.instance(pixel.pixelCode)
+      ?.track(tiktokEventName, { ...customData, event_id: eventId });
   });
 
-  if (eventName === 'Purchase') {
+  if (eventName === "Purchase") {
     trackingConfig.googleAds.forEach((config) => {
       if (!config.conversionId || !config.conversionLabel) return;
-      window.gtag?.('event', 'conversion', {
+      window.gtag?.("event", "conversion", {
         send_to: `${config.conversionId}/${config.conversionLabel}`,
         value: customData.value,
-        currency: customData.currency || 'BDT',
+        currency: customData.currency || "BDT",
         transaction_id: customData.order_id || eventId,
       });
     });
   }
 }
 
-export async function trackMarketingEvent(eventName, { userData = {}, customData = {} } = {}) {
+export async function trackMarketingEvent(
+  eventName,
+  { userData = {}, customData = {} } = {},
+) {
   try {
     await initializeTracking();
     const eventId = createEventId(eventName);
     trackInBrowser(eventName, eventId, customData);
     const clickData = getClickData();
-    await apiRequest('/tracking/events', {
-      method: 'POST',
+    await apiRequest("/tracking/events", {
+      method: "POST",
       body: JSON.stringify({
         eventName,
         eventId,

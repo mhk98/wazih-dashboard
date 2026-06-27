@@ -15,6 +15,7 @@ export default function BannerAdsPage({ banners, onCreate, onEdit, onDelete, onT
 
   const filtered = useMemo(() => {
     return banners
+      .filter((banner) => banner.isDynamic !== false)
       .filter((banner) => banner.category.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
         const va = sort.key === 'id' ? a.id : a[sort.key];
@@ -73,12 +74,20 @@ export default function BannerAdsPage({ banners, onCreate, onEdit, onDelete, onT
                   <td className="px-4 py-4 text-gray-600">{index + 1}</td>
                   <td className="px-4 py-4 text-gray-700">{banner.category}</td>
                   <td className="px-4 py-4">
-                    <div
-                      className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-gray-200 text-center text-[8px] font-bold leading-tight text-white"
-                      style={{ background: banner.imageColor }}
-                    >
-                      {banner.imageText}
-                    </div>
+                    {banner.imageSrc ? (
+                      <img
+                        src={banner.imageSrc}
+                        alt={banner.imageText || banner.category}
+                        className="h-12 w-12 rounded-full border border-gray-200 object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-gray-200 text-center text-[8px] font-bold leading-tight text-white"
+                        style={{ background: banner.imageColor }}
+                      >
+                        {banner.imageText}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-4">
                     <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${

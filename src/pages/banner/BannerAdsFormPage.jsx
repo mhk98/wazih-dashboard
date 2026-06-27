@@ -12,6 +12,7 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
     status: banner?.status ?? true,
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const isEdit = mode === 'edit';
 
@@ -22,6 +23,7 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
   async function handleSubmit(e) {
     e.preventDefault();
     const selectedCategory = categories.find((category) => String(category.id) === String(form.categoryId));
+    setError('');
     setSaving(true);
     try {
       await onSave({
@@ -34,8 +36,11 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
         imageText: form.imageText,
         imageColor: form.imageColor,
         status: form.status,
+        sortOrder: banner?.sortOrder ?? null,
       });
       onNavigate('banner_ads');
+    } catch (err) {
+      setError(err.message || 'Banner save failed');
     } finally {
       setSaving(false);
     }
@@ -56,6 +61,11 @@ export default function BannerAdsFormPage({ mode = 'create', banner, categories,
       </div>
 
       <div className="mx-auto max-w-5xl rounded bg-white p-6 shadow-sm">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-gray-500">link *</span>

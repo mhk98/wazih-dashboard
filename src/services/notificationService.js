@@ -1,15 +1,17 @@
-import { io } from 'socket.io-client';
-import { apiRequest, buildQuery, getAccessToken } from '../utils/apiClient';
+import { io } from "socket.io-client";
+import { apiRequest, buildQuery, getAccessToken } from "../utils/apiClient";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-const SOCKET_BASE = API_BASE.replace(/\/api\/v1\/?$/, '');
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+const SOCKET_BASE = API_BASE.replace(/\/api\/v1\/?$/, "");
 
 export const notificationService = {
   getAll: (params = {}) => apiRequest(`/notifications${buildQuery(params)}`),
-  getUnreadCount: () => apiRequest('/notifications/unread-count'),
-  markAsRead: (id) => apiRequest(`/notifications/${id}/read`, { method: 'PATCH' }),
-  markAllAsRead: () => apiRequest('/notifications/read-all', { method: 'PATCH' }),
-  delete: (id) => apiRequest(`/notifications/${id}`, { method: 'DELETE' }),
+  getUnreadCount: () => apiRequest("/notifications/unread-count"),
+  markAsRead: (id) =>
+    apiRequest(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllAsRead: () =>
+    apiRequest("/notifications/read-all", { method: "PATCH" }),
+  delete: (id) => apiRequest(`/notifications/${id}`, { method: "DELETE" }),
 };
 
 let notificationSocket = null;
@@ -21,7 +23,7 @@ export function connectNotificationSocket() {
   if (!notificationSocket) {
     notificationSocket = io(SOCKET_BASE, {
       auth,
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

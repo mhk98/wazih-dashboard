@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, Printer, Video } from 'lucide-react';
-import { useProducts } from '../../hooks/useProducts';
+import { useMemo, useState } from "react";
+import { ChevronDown, Printer, Video } from "lucide-react";
+import { useProducts } from "../../hooks/useProducts";
 
 export default function BarcodePage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [generatedProduct, setGeneratedProduct] = useState(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { data: allProducts } = useProducts({ limit: 200 });
 
@@ -21,17 +21,17 @@ export default function BarcodePage() {
 
   function handleSelect(product) {
     setSelectedProduct(product);
-    setSearch('');
-    setError('');
+    setSearch("");
+    setError("");
     setIsOpen(false);
   }
 
   function handleSubmit() {
     if (!selectedProduct) {
-      setError('Please select a product.');
+      setError("Please select a product.");
       return;
     }
-    setError('');
+    setError("");
     setGeneratedProduct(selectedProduct);
   }
 
@@ -50,7 +50,9 @@ export default function BarcodePage() {
       </div>
 
       <div className="mx-auto w-full max-w-[1060px]">
-        <label className="mb-2 block text-sm font-bold text-gray-500">Products *</label>
+        <label className="mb-2 block text-sm font-bold text-gray-500">
+          Products *
+        </label>
 
         <div className="relative">
           <button
@@ -58,8 +60,15 @@ export default function BarcodePage() {
             onClick={() => setIsOpen((open) => !open)}
             className="flex h-9 w-full items-center justify-between border border-gray-400 bg-white px-2 text-left text-sm text-gray-700"
           >
-            <span>{selectedProduct ? productLabel(selectedProduct) : 'Select Product..'}</span>
-            <ChevronDown size={16} className={`text-gray-400 transition ${isOpen ? 'rotate-180' : ''}`} />
+            <span>
+              {selectedProduct
+                ? productLabel(selectedProduct)
+                : "Select Product.."}
+            </span>
+            <ChevronDown
+              size={16}
+              className={`text-gray-400 transition ${isOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {isOpen && (
@@ -74,7 +83,10 @@ export default function BarcodePage() {
               </div>
 
               <div className="max-h-52 overflow-y-auto pr-1">
-                <OptionRow active={!selectedProduct} onClick={() => setSelectedProduct(null)}>
+                <OptionRow
+                  active={!selectedProduct}
+                  onClick={() => setSelectedProduct(null)}
+                >
                   Select Product..
                 </OptionRow>
 
@@ -89,13 +101,17 @@ export default function BarcodePage() {
                 ))}
 
                 {filteredProducts.length === 0 && (
-                  <div className="px-2 py-3 text-sm text-gray-400">No product found</div>
+                  <div className="px-2 py-3 text-sm text-gray-400">
+                    No product found
+                  </div>
                 )}
               </div>
             </div>
           )}
         </div>
-        {error && <p className="mt-2 text-xs font-semibold text-red-500">{error}</p>}
+        {error && (
+          <p className="mt-2 text-xs font-semibold text-red-500">{error}</p>
+        )}
 
         <div className="mt-6 flex justify-center">
           <button
@@ -128,25 +144,32 @@ export default function BarcodePage() {
 
 function productLabel(product) {
   const price = getProductPrice(product);
-  return `${product.name}${price ? ` - ${price}` : ''}`;
+  return `${product.name}${price ? ` - ${price}` : ""}`;
 }
 
 function BarcodeCard({ product }) {
-  const code = String(product.sku || 'N/A');
+  const code = String(product.sku || "N/A");
   const price = getProductPrice(product);
   const bars = buildBarcodeBars(code);
 
   return (
-    <div id="product-barcode-card" className="w-full max-w-[465px] bg-white px-3 py-3 text-center shadow-sm print:shadow-none">
-      <h2 className="text-2xl font-bold text-gray-500">Wazih</h2>
-      <p className="mt-1 text-base font-extrabold leading-tight text-black">{product.name}</p>
-      <p className="mt-1 text-sm font-bold text-black">Price: {price || 'N/A'} Tk</p>
+    <div
+      id="product-barcode-card"
+      className="w-full max-w-[465px] bg-white px-3 py-3 text-center shadow-sm print:shadow-none"
+    >
+      <h2 className="text-2xl font-bold text-gray-500">Wazih Commerce</h2>
+      <p className="mt-1 text-base font-extrabold leading-tight text-black">
+        {product.name}
+      </p>
+      <p className="mt-1 text-sm font-bold text-black">
+        Price: {price || "N/A"} Tk
+      </p>
 
       <div className="mt-3 flex h-[84px] items-stretch justify-center overflow-hidden">
         {bars.map((bar, index) => (
           <span
             key={`${bar.width}-${index}`}
-            className={bar.black ? 'bg-black' : 'bg-white'}
+            className={bar.black ? "bg-black" : "bg-white"}
             style={{ width: `${bar.width}px` }}
           />
         ))}
@@ -159,18 +182,29 @@ function BarcodeCard({ product }) {
 
 function getProductPrice(product) {
   const variationPrice = Array.isArray(product.variations)
-    ? product.variations.find((variation) => variation?.newPrice || variation?.oldPrice)?.newPrice
-      || product.variations.find((variation) => variation?.newPrice || variation?.oldPrice)?.oldPrice
+    ? product.variations.find(
+        (variation) => variation?.newPrice || variation?.oldPrice,
+      )?.newPrice ||
+      product.variations.find(
+        (variation) => variation?.newPrice || variation?.oldPrice,
+      )?.oldPrice
     : null;
-  return product.price || product.newPrice || product.salePrice || variationPrice || product.advanceAmount || '';
+  return (
+    product.price ||
+    product.newPrice ||
+    product.salePrice ||
+    variationPrice ||
+    product.advanceAmount ||
+    ""
+  );
 }
 
 function buildBarcodeBars(value) {
-  const source = value || 'N/A';
+  const source = value || "N/A";
   const bits = source
-    .split('')
-    .map((char) => char.charCodeAt(0).toString(2).padStart(8, '0'))
-    .join('');
+    .split("")
+    .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
+    .join("");
   const framedBits = `1010${bits}0101`;
   const bars = [];
   let black = true;
@@ -179,7 +213,7 @@ function buildBarcodeBars(value) {
     const bit = framedBits[i];
     bars.push({
       black,
-      width: bit === '1' ? 4 : 2,
+      width: bit === "1" ? 4 : 2,
     });
     black = !black;
   }
@@ -193,7 +227,9 @@ function OptionRow({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       className={`block w-full px-2 py-2 text-left text-sm transition ${
-        active ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-blue-50'
+        active
+          ? "bg-blue-500 text-white"
+          : "bg-white text-gray-600 hover:bg-blue-50"
       }`}
     >
       {children}

@@ -1,8 +1,12 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 const STORAGE_KEYS = {
-  access: "wazih_access",
-  refresh: "wazih_refresh",
+  access: "homzify_access",
+  refresh: "homzify_refresh",
+};
+
+export const USER_STORAGE_KEYS = {
+  current: "homzify_user",
 };
 
 export function getAccessToken() {
@@ -19,9 +23,11 @@ export function setTokens(accessToken, refreshToken) {
 }
 
 export function clearTokens() {
-  localStorage.removeItem(STORAGE_KEYS.access);
-  localStorage.removeItem(STORAGE_KEYS.refresh);
-  localStorage.removeItem("wazih_user");
+  [
+    STORAGE_KEYS.access,
+    STORAGE_KEYS.refresh,
+    USER_STORAGE_KEYS.current,
+  ].forEach((key) => localStorage.removeItem(key));
 }
 
 export function decodeToken(token) {
@@ -66,19 +72,48 @@ async function doRefresh() {
 // Singleton refresh promise to prevent parallel refresh calls
 let refreshPromise = null;
 
+const NETWORK_RETRY_DELAYS = [400, 1200];
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isNetworkError(error) {
+  return (
+    error instanceof TypeError ||
+    /failed to fetch|network|load failed/i.test(error?.message || "")
+  );
+}
+
+async function fetchWithRetry(url, init, retryNetworkErrors) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      const delay = NETWORK_RETRY_DELAYS[attempt];
+      if (!retryNetworkErrors || !delay || !isNetworkError(error)) throw error;
+      await wait(delay);
+    }
+  }
+}
+
 async function getValidToken() {
   const token = getAccessToken();
   if (!token) return null;
   if (!isTokenExpired(token)) return token;
 
   if (!refreshPromise) {
-    refreshPromise = doRefresh().finally(() => { refreshPromise = null; });
+    refreshPromise = doRefresh().finally(() => {
+      refreshPromise = null;
+    });
   }
   return refreshPromise;
 }
 
 export async function apiRequest(path, options = {}) {
   const token = await getValidToken();
+  const method = (options.method || "GET").toUpperCase();
+  const retryNetworkErrors = method === "GET";
   // Don't set Content-Type for FormData — browser sets it with boundary automatically
   const isFormData = options.body instanceof FormData;
   const headers = {
@@ -87,23 +122,31 @@ export async function apiRequest(path, options = {}) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    cache: "no-store",
-    ...options,
-    headers,
-  });
+  const res = await fetchWithRetry(
+    `${BASE}${path}`,
+    {
+      credentials: "include",
+      cache: "no-store",
+      ...options,
+      headers,
+    },
+    retryNetworkErrors,
+  );
 
   if (res.status === 401) {
     // Token might have just expired between the check and the request
     try {
       const freshToken = await doRefresh();
-      const retryRes = await fetch(`${BASE}${path}`, {
-        credentials: "include",
-        cache: "no-store",
-        ...options,
-        headers: { ...headers, Authorization: `Bearer ${freshToken}` },
-      });
+      const retryRes = await fetchWithRetry(
+        `${BASE}${path}`,
+        {
+          credentials: "include",
+          cache: "no-store",
+          ...options,
+          headers: { ...headers, Authorization: `Bearer ${freshToken}` },
+        },
+        retryNetworkErrors,
+      );
       if (!retryRes.ok) {
         const err = await retryRes.json();
         throw new Error(err.message || "Request failed");
@@ -116,7 +159,9 @@ export async function apiRequest(path, options = {}) {
     }
   }
 
-  const json = await res.json();
+  const json = await res
+    .json()
+    .catch(() => ({ message: res.statusText || "Request failed" }));
   if (!res.ok) throw new Error(json.message || "Request failed");
   return json;
 }

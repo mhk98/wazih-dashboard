@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   productService,
   categoryService,
@@ -16,6 +16,7 @@ function useResourceList(fetchFn, params = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tick, setTick] = useState(0);
+  const hasLoadedDataRef = useRef(false);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
 
@@ -27,9 +28,12 @@ function useResourceList(fetchFn, params = {}) {
       .then((res) => {
         setData(res.data || []);
         setMeta(res.meta || {});
+        hasLoadedDataRef.current = true;
       })
       .catch((err) => {
-        if (err.name !== "AbortError") setError(err.message);
+        if (err.name !== "AbortError") {
+          setError((prev) => (hasLoadedDataRef.current ? prev : err.message));
+        }
       })
       .finally(() => setLoading(false));
     return () => controller.abort();

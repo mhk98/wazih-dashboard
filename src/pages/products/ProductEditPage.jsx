@@ -1,23 +1,30 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Upload, Plus, Trash2, X } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Upload, Plus, Trash2, X } from "lucide-react";
 import {
-  categoryService, subcategoryService, childcategoryService, brandService,
+  categoryService,
+  subcategoryService,
+  childcategoryService,
+  brandService,
   productService,
-} from '../../services/productService';
-import { supplierService } from '../../services/supplierService';
-import RichEditor from '../../components/RichEditor';
-import { apiRequest } from '../../utils/apiClient';
+} from "../../services/productService";
+import { supplierService } from "../../services/supplierService";
+import RichEditor from "../../components/RichEditor";
+import { apiRequest } from "../../utils/apiClient";
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const BASE_URL =
+  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ||
+  "http://localhost:5000";
 
 function Toggle({ checked, onChange }) {
   return (
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${checked ? 'bg-blue-500' : 'bg-gray-300'}`}
+      className={`relative inline-flex w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${checked ? "bg-blue-500" : "bg-gray-300"}`}
     >
-      <span className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 mt-0.5 ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      <span
+        className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 mt-0.5 ${checked ? "translate-x-5" : "translate-x-0.5"}`}
+      />
     </button>
   );
 }
@@ -37,116 +44,153 @@ function FormField({ label, required, children }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-600 mb-1">
-        {label}{required && ' *'}
+        {label}
+        {required && " *"}
       </label>
       {children}
     </div>
   );
 }
 
-const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white';
+const inputCls =
+  "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white";
 const selectCls = `${inputCls} appearance-none`;
-const emptyVariation = { purchasePrice: '', oldPrice: '', discountPercent: '', newPrice: '', stock: '' };
+const emptyVariation = {
+  purchasePrice: "",
+  oldPrice: "",
+  discountPercent: "",
+  newPrice: "",
+  stock: "",
+};
 
 function clampDiscount(value) {
   const num = Number(value);
-  if (Number.isNaN(num)) return '';
+  if (Number.isNaN(num)) return "";
   return Math.max(0, Math.min(100, num));
 }
 
 function calcDiscountPercent(oldPrice, newPrice) {
   const oldNum = Number(oldPrice);
   const newNum = Number(newPrice);
-  if (!oldNum || !newNum || oldNum <= newNum) return '';
+  if (!oldNum || !newNum || oldNum <= newNum) return "";
   return Number((((oldNum - newNum) / oldNum) * 100).toFixed(2));
 }
 
 function calcDiscountedPrice(oldPrice, discountPercent) {
   const oldNum = Number(oldPrice);
   const discountNum = Number(discountPercent);
-  if (!oldNum || Number.isNaN(discountNum)) return '';
-  return Math.max(0, Math.round(oldNum - ((oldNum * discountNum) / 100)));
+  if (!oldNum || Number.isNaN(discountNum)) return "";
+  return Math.max(0, Math.round(oldNum - (oldNum * discountNum) / 100));
 }
 
 export default function ProductEditPage({ product, onNavigate }) {
   const fileInputRef = useRef(null);
 
   // ----- product info fields -----
-  const [name, setName]                   = useState(product?.name        || '');
-  const [slug, setSlug]                   = useState(product?.slug        || '');
-  const [sku, setSku]                     = useState(product?.sku         || '');
-  const [productVideo, setProductVideo]   = useState(product?.productVideo|| '');
-  const [advanceAmount, setAdvanceAmount] = useState(product?.advanceAmount|| '');
-  const [stockAlert, setStockAlert]       = useState(product?.stockAlert  || '');
+  const [name, setName] = useState(product?.name || "");
+  const [slug, setSlug] = useState(product?.slug || "");
+  const [sku, setSku] = useState(product?.sku || "");
+  const [productVideo, setProductVideo] = useState(product?.productVideo || "");
+  const [advanceAmount, setAdvanceAmount] = useState(
+    product?.advanceAmount || "",
+  );
+  const [stockAlert, setStockAlert] = useState(product?.stockAlert || "");
 
   // ----- descriptions -----
-  const [description, setDescription]           = useState(product?.description      || '');
-  const [shortDescription, setShortDescription] = useState(product?.shortDescription || '');
+  const [description, setDescription] = useState(product?.description || "");
+  const [shortDescription, setShortDescription] = useState(
+    product?.shortDescription || "",
+  );
 
   // ----- SEO -----
-  const [metaTitle, setMetaTitle]           = useState(product?.metaTitle       || '');
-  const [metaKeyword, setMetaKeyword]       = useState(product?.metaKeyword     || '');
-  const [metaDescription, setMetaDescription] = useState(product?.metaDescription || '');
+  const [metaTitle, setMetaTitle] = useState(product?.metaTitle || "");
+  const [metaKeyword, setMetaKeyword] = useState(product?.metaKeyword || "");
+  const [metaDescription, setMetaDescription] = useState(
+    product?.metaDescription || "",
+  );
 
   // ----- gift -----
-  const [giftTitle, setGiftTitle] = useState(product?.giftTitle || '');
-  const [giftPrice, setGiftPrice] = useState(product?.giftPrice || '');
+  const [giftTitle, setGiftTitle] = useState(product?.giftTitle || "");
+  const [giftPrice, setGiftPrice] = useState(product?.giftPrice || "");
 
   // ----- toggles -----
-  const [status, setStatus]           = useState(product?.status !== 'Inactive');
-  const [bestDeals, setBestDeals]     = useState(!!product?.bestDeals);
+  const [status, setStatus] = useState(product?.status !== "Inactive");
+  const [bestDeals, setBestDeals] = useState(!!product?.bestDeals);
   const [freeShipping, setFreeShipping] = useState(!!product?.freeShipping);
   const [purchaseEnabled, setPurchaseEnabled] = useState(true);
 
   // ----- existing images -----
   const parseImages = (images) => {
     if (Array.isArray(images)) return images;
-    if (typeof images === 'string') { try { return JSON.parse(images); } catch { return []; } }
+    if (typeof images === "string") {
+      try {
+        return JSON.parse(images);
+      } catch {
+        return [];
+      }
+    }
     return [];
   };
   const existingImages = parseImages(product?.images);
-  const [keptImages, setKeptImages]   = useState(existingImages); // filenames to keep
-  const [newImageFiles, setNewImageFiles]     = useState([]);
+  const [keptImages, setKeptImages] = useState(existingImages); // filenames to keep
+  const [newImageFiles, setNewImageFiles] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
-  const [isDragging, setIsDragging]   = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // ----- variations -----
   const initVariations = product?.variations?.length
-    ? product.variations.map(v => ({
+    ? product.variations.map((v) => ({
         id: v.Id,
-        purchasePrice: v.purchasePrice || '',
-        oldPrice:      v.oldPrice      || '',
+        purchasePrice: v.purchasePrice || "",
+        oldPrice: v.oldPrice || "",
         discountPercent: calcDiscountPercent(v.oldPrice, v.newPrice),
-        newPrice:      v.newPrice      || '',
-        stock:         v.stock         || 0,
+        newPrice: v.newPrice || "",
+        stock: v.stock || 0,
       }))
     : [emptyVariation];
   const [variations, setVariations] = useState(initVariations);
 
   // ----- dropdowns -----
-  const [categories,    setCategories]    = useState([]);
+  const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [childcats,     setChildcats]     = useState([]);
-  const [brands,        setBrands]        = useState([]);
-  const [suppliers,     setSuppliers]     = useState([]);
+  const [childcats, setChildcats] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
 
-  const [selectedCat,    setSelectedCat]    = useState(product?.categoryId      ? String(product.categoryId)      : '');
-  const [selectedSub,    setSelectedSub]    = useState(product?.subcategoryId   ? String(product.subcategoryId)   : '');
-  const [selectedChild,  setSelectedChild]  = useState(product?.childcategoryId ? String(product.childcategoryId) : '');
-  const [selectedBrand,  setSelectedBrand]  = useState(product?.brandId         ? String(product.brandId)         : '');
-  const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [selectedCat, setSelectedCat] = useState(
+    product?.categoryId ? String(product.categoryId) : "",
+  );
+  const [selectedSub, setSelectedSub] = useState(
+    product?.subcategoryId ? String(product.subcategoryId) : "",
+  );
+  const [selectedChild, setSelectedChild] = useState(
+    product?.childcategoryId ? String(product.childcategoryId) : "",
+  );
+  const [selectedBrand, setSelectedBrand] = useState(
+    product?.brandId ? String(product.brandId) : "",
+  );
+  const [selectedSupplier, setSelectedSupplier] = useState("");
 
-  const [loadingSub,   setLoadingSub]   = useState(false);
+  const [loadingSub, setLoadingSub] = useState(false);
   const [loadingChild, setLoadingChild] = useState(false);
 
-  const [submitting, setSubmitting]   = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // load categories, brands, suppliers on mount
   useEffect(() => {
-    categoryService.getAllList().then(r => setCategories(r.data || [])).catch(() => {});
-    brandService.getAllList().then(r => setBrands(r.data || [])).catch(() => {});
-    supplierService.getAllList().then(r => setSuppliers(r.data || [])).catch(() => {});
+    categoryService
+      .getAllList()
+      .then((r) => setCategories(r.data || []))
+      .catch(() => {});
+    brandService
+      .getAllList()
+      .then((r) => setBrands(r.data || []))
+      .catch(() => {});
+    supplierService
+      .getAllList()
+      .then((r) => setSuppliers(r.data || []))
+      .catch(() => {});
   }, []);
 
   // load subcategories when category changes
@@ -154,8 +198,9 @@ export default function ProductEditPage({ product, onNavigate }) {
     setSubcategories([]);
     if (!selectedCat) return;
     setLoadingSub(true);
-    subcategoryService.getAll({ categoryId: selectedCat, limit: 100 })
-      .then(r => setSubcategories(r.data?.data || r.data || []))
+    subcategoryService
+      .getAll({ categoryId: selectedCat, limit: 100 })
+      .then((r) => setSubcategories(r.data?.data || r.data || []))
       .catch(() => {})
       .finally(() => setLoadingSub(false));
   }, [selectedCat]);
@@ -165,14 +210,19 @@ export default function ProductEditPage({ product, onNavigate }) {
     setChildcats([]);
     if (!selectedSub) return;
     setLoadingChild(true);
-    childcategoryService.getAll({ subcategoryId: selectedSub, limit: 100 })
-      .then(r => setChildcats(r.data?.data || r.data || []))
+    childcategoryService
+      .getAll({ subcategoryId: selectedSub, limit: 100 })
+      .then((r) => setChildcats(r.data?.data || r.data || []))
       .catch(() => {})
       .finally(() => setLoadingChild(false));
   }, [selectedSub]);
 
   function autoSlug(val) {
-    return val.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+    return val
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
   }
 
   function handleNameChange(val) {
@@ -182,82 +232,104 @@ export default function ProductEditPage({ product, onNavigate }) {
 
   // images
   function addFiles(files) {
-    const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
-    setNewImageFiles(prev => [...prev, ...imgs]);
-    imgs.forEach(f => setNewImagePreviews(prev => [...prev, URL.createObjectURL(f)]));
+    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    setNewImageFiles((prev) => [...prev, ...imgs]);
+    imgs.forEach((f) =>
+      setNewImagePreviews((prev) => [...prev, URL.createObjectURL(f)]),
+    );
   }
 
-  function handleDrop(e) { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }
-  function handleFileChange(e) { addFiles(e.target.files); }
-  function removeExisting(filename) { setKeptImages(prev => prev.filter(f => f !== filename)); }
+  function handleDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    addFiles(e.dataTransfer.files);
+  }
+  function handleFileChange(e) {
+    addFiles(e.target.files);
+  }
+  function removeExisting(filename) {
+    setKeptImages((prev) => prev.filter((f) => f !== filename));
+  }
   function removeNew(idx) {
-    setNewImageFiles(prev => prev.filter((_, i) => i !== idx));
-    setNewImagePreviews(prev => prev.filter((_, i) => i !== idx));
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== idx));
+    setNewImagePreviews((prev) => prev.filter((_, i) => i !== idx));
   }
 
   // variations
-  function addVariation() { setVariations(prev => [...prev, emptyVariation]); }
-  function updateVariation(idx, field, val) {
-    setVariations(prev => prev.map((v, i) => {
-      if (i !== idx) return v;
-      const next = { ...v, [field]: val };
-      if (field === 'discountPercent') {
-        const discount = clampDiscount(val);
-        next.discountPercent = discount;
-        next.newPrice = calcDiscountedPrice(next.oldPrice, discount);
-      }
-      if (field === 'oldPrice' && next.discountPercent !== '') {
-        next.newPrice = calcDiscountedPrice(val, next.discountPercent);
-      }
-      if (field === 'newPrice') {
-        next.discountPercent = calcDiscountPercent(next.oldPrice, val);
-      }
-      return next;
-    }));
+  function addVariation() {
+    setVariations((prev) => [...prev, emptyVariation]);
   }
-  function removeVariation(idx) { setVariations(prev => prev.filter((_, i) => i !== idx)); }
+  function updateVariation(idx, field, val) {
+    setVariations((prev) =>
+      prev.map((v, i) => {
+        if (i !== idx) return v;
+        const next = { ...v, [field]: val };
+        if (field === "discountPercent") {
+          const discount = clampDiscount(val);
+          next.discountPercent = discount;
+          next.newPrice = calcDiscountedPrice(next.oldPrice, discount);
+        }
+        if (field === "oldPrice" && next.discountPercent !== "") {
+          next.newPrice = calcDiscountedPrice(val, next.discountPercent);
+        }
+        if (field === "newPrice") {
+          next.discountPercent = calcDiscountPercent(next.oldPrice, val);
+        }
+        return next;
+      }),
+    );
+  }
+  function removeVariation(idx) {
+    setVariations((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   async function handleSubmit() {
-    if (!name.trim()) { setSubmitError('Product name is required'); return; }
+    if (!name.trim()) {
+      setSubmitError("Product name is required");
+      return;
+    }
     setSubmitting(true);
-    setSubmitError('');
+    setSubmitError("");
     try {
       const fd = new FormData();
-      fd.append('name',  name);
-      fd.append('slug',  slug);
-      if (sku)            fd.append('sku', sku);
-      if (selectedCat)    fd.append('categoryId',      selectedCat);
-      if (selectedSub)    fd.append('subcategoryId',   selectedSub);
-      if (selectedChild)  fd.append('childcategoryId', selectedChild);
-      if (selectedBrand)  fd.append('brandId',         selectedBrand);
-      if (productVideo)   fd.append('productVideo',    productVideo);
-      if (advanceAmount)  fd.append('advanceAmount',   advanceAmount);
-      if (stockAlert)     fd.append('stockAlert',      stockAlert);
-      if (description)    fd.append('description',     description);
-      if (shortDescription) fd.append('shortDescription', shortDescription);
-      if (metaTitle)      fd.append('metaTitle',       metaTitle);
-      if (metaKeyword)    fd.append('metaKeyword',     metaKeyword);
-      if (metaDescription) fd.append('metaDescription', metaDescription);
-      if (giftTitle)      fd.append('giftTitle',       giftTitle);
-      if (giftPrice)      fd.append('giftPrice',       giftPrice);
-      fd.append('status',       status       ? 'Active' : 'Inactive');
-      fd.append('bestDeals',    bestDeals    ? 'true' : 'false');
-      fd.append('freeShipping', freeShipping ? 'true' : 'false');
-      fd.append('keptImages', JSON.stringify(keptImages));
-      fd.append('variations', JSON.stringify(variations.filter(v => v.newPrice || v.purchasePrice)));
-      newImageFiles.forEach(f => fd.append('gallery_images', f));
+      fd.append("name", name);
+      fd.append("slug", slug);
+      if (sku) fd.append("sku", sku);
+      if (selectedCat) fd.append("categoryId", selectedCat);
+      if (selectedSub) fd.append("subcategoryId", selectedSub);
+      if (selectedChild) fd.append("childcategoryId", selectedChild);
+      if (selectedBrand) fd.append("brandId", selectedBrand);
+      if (productVideo) fd.append("productVideo", productVideo);
+      if (advanceAmount) fd.append("advanceAmount", advanceAmount);
+      if (stockAlert) fd.append("stockAlert", stockAlert);
+      if (description) fd.append("description", description);
+      if (shortDescription) fd.append("shortDescription", shortDescription);
+      if (metaTitle) fd.append("metaTitle", metaTitle);
+      if (metaKeyword) fd.append("metaKeyword", metaKeyword);
+      if (metaDescription) fd.append("metaDescription", metaDescription);
+      if (giftTitle) fd.append("giftTitle", giftTitle);
+      if (giftPrice) fd.append("giftPrice", giftPrice);
+      fd.append("status", status ? "Active" : "Inactive");
+      fd.append("bestDeals", bestDeals ? "true" : "false");
+      fd.append("freeShipping", freeShipping ? "true" : "false");
+      fd.append("keptImages", JSON.stringify(keptImages));
+      fd.append(
+        "variations",
+        JSON.stringify(variations.filter((v) => v.newPrice || v.purchasePrice)),
+      );
+      newImageFiles.forEach((f) => fd.append("gallery_images", f));
 
-      await apiRequest(`/product/${product.Id}`, { method: 'PUT', body: fd });
-      alert('Product updated successfully!');
-      onNavigate && onNavigate('products');
+      await apiRequest(`/product/${product.Id}`, { method: "PUT", body: fd });
+      alert("Product updated successfully!");
+      onNavigate && onNavigate("products");
     } catch (err) {
-      setSubmitError(err.message || 'Failed to update product');
+      setSubmitError(err.message || "Failed to update product");
     } finally {
       setSubmitting(false);
     }
   }
 
-  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -265,12 +337,15 @@ export default function ProductEditPage({ product, onNavigate }) {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-800">Product Edit</h1>
         <div className="flex items-center gap-2">
-          <button type="button" className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+          >
             রেজিস্ট্রেশন করুন
           </button>
           <button
             type="button"
-            onClick={() => onNavigate && onNavigate('products')}
+            onClick={() => onNavigate && onNavigate("products")}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition"
           >
             Manage
@@ -282,43 +357,101 @@ export default function ProductEditPage({ product, onNavigate }) {
       <SectionCard title="Product Info">
         <div className="space-y-4">
           {submitError && (
-            <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg">{submitError}</div>
+            <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg">
+              {submitError}
+            </div>
           )}
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Product Name" required>
-              <input type="text" value={name} onChange={e => handleNameChange(e.target.value)} className={inputCls} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
             <FormField label="Slug" required>
-              <input type="text" value={slug} onChange={e => setSlug(e.target.value)} className={inputCls} />
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <FormField label="Categories" required>
               <div className="relative">
-                <select className={selectCls} value={selectedCat} onChange={e => { setSelectedCat(e.target.value); setSelectedSub(''); setSelectedChild(''); }}>
+                <select
+                  className={selectCls}
+                  value={selectedCat}
+                  onChange={(e) => {
+                    setSelectedCat(e.target.value);
+                    setSelectedSub("");
+                    setSelectedChild("");
+                  }}
+                >
                   <option value="">Select...</option>
-                  {categories.map(c => <option key={c.Id} value={c.Id}>{c.name}</option>)}
+                  {categories.map((c) => (
+                    <option key={c.Id} value={c.Id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
               </div>
             </FormField>
             <FormField label="Sub Categories">
               <div className="relative">
-                <select className={selectCls} value={selectedSub} onChange={e => { setSelectedSub(e.target.value); setSelectedChild(''); }} disabled={!selectedCat || loadingSub}>
-                  <option value="">{loadingSub ? 'Loading...' : 'Choose ...'}</option>
-                  {subcategories.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
+                <select
+                  className={selectCls}
+                  value={selectedSub}
+                  onChange={(e) => {
+                    setSelectedSub(e.target.value);
+                    setSelectedChild("");
+                  }}
+                  disabled={!selectedCat || loadingSub}
+                >
+                  <option value="">
+                    {loadingSub ? "Loading..." : "Choose ..."}
+                  </option>
+                  {subcategories.map((s) => (
+                    <option key={s.Id} value={s.Id}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
               </div>
             </FormField>
             <FormField label="Child Categories">
               <div className="relative">
-                <select className={selectCls} value={selectedChild} onChange={e => setSelectedChild(e.target.value)} disabled={!selectedSub || loadingChild}>
-                  <option value="">{loadingChild ? 'Loading...' : 'Choose ...'}</option>
-                  {childcats.map(c => <option key={c.Id} value={c.Id}>{c.name}</option>)}
+                <select
+                  className={selectCls}
+                  value={selectedChild}
+                  onChange={(e) => setSelectedChild(e.target.value)}
+                  disabled={!selectedSub || loadingChild}
+                >
+                  <option value="">
+                    {loadingChild ? "Loading..." : "Choose ..."}
+                  </option>
+                  {childcats.map((c) => (
+                    <option key={c.Id} value={c.Id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
               </div>
             </FormField>
           </div>
@@ -326,27 +459,59 @@ export default function ProductEditPage({ product, onNavigate }) {
           <div className="grid grid-cols-3 gap-4">
             <FormField label="Brands">
               <div className="relative">
-                <select className={selectCls} value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)}>
+                <select
+                  className={selectCls}
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                >
                   <option value="">Select...</option>
-                  {brands.map(b => <option key={b.Id} value={b.Id}>{b.name}</option>)}
+                  {brands.map((b) => (
+                    <option key={b.Id} value={b.Id}>
+                      {b.name}
+                    </option>
+                  ))}
                 </select>
-                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <ChevronDown
+                  size={13}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
               </div>
             </FormField>
             <FormField label="Product Video">
-              <input type="text" value={productVideo} onChange={e => setProductVideo(e.target.value)} className={inputCls} placeholder="YouTube URL" />
+              <input
+                type="text"
+                value={productVideo}
+                onChange={(e) => setProductVideo(e.target.value)}
+                className={inputCls}
+                placeholder="YouTube URL"
+              />
             </FormField>
             <FormField label="SKU / Barcode">
-              <input type="text" value={sku} onChange={e => setSku(e.target.value)} className={inputCls} />
+              <input
+                type="text"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <FormField label="Advance Payment Amount">
-              <input type="number" value={advanceAmount} onChange={e => setAdvanceAmount(e.target.value)} className={inputCls} />
+              <input
+                type="number"
+                value={advanceAmount}
+                onChange={(e) => setAdvanceAmount(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
             <FormField label="Stock Alert">
-              <input type="number" value={stockAlert} onChange={e => setStockAlert(e.target.value)} className={inputCls} />
+              <input
+                type="number"
+                value={stockAlert}
+                onChange={(e) => setStockAlert(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
             <div />
           </div>
@@ -356,16 +521,28 @@ export default function ProductEditPage({ product, onNavigate }) {
       {/* Image Gallery */}
       <SectionCard title="Product Image Gallery">
         <div
-          onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center py-10 cursor-pointer transition ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center py-10 cursor-pointer transition ${isDragging ? "border-blue-400 bg-blue-50" : "border-gray-300 bg-gray-50 hover:bg-gray-100"}`}
         >
           <Upload size={28} className="text-gray-400 mb-2" />
-          <p className="text-sm font-semibold text-gray-500">Drag &amp; Drop or Click</p>
+          <p className="text-sm font-semibold text-gray-500">
+            Drag &amp; Drop or Click
+          </p>
           <p className="text-xs text-gray-400 mt-0.5">Upload multiple images</p>
-          <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
 
         {/* Existing images */}
@@ -378,7 +555,10 @@ export default function ProductEditPage({ product, onNavigate }) {
                     src={`${BASE_URL}/images/${filename}`}
                     alt=""
                     className="w-full h-full object-cover"
-                    onError={e => { e.target.src = ''; e.target.parentElement.classList.add('bg-gray-100'); }}
+                    onError={(e) => {
+                      e.target.src = "";
+                      e.target.parentElement.classList.add("bg-gray-100");
+                    }}
                   />
                 </div>
                 <button
@@ -388,7 +568,9 @@ export default function ProductEditPage({ product, onNavigate }) {
                 >
                   <X size={10} />
                 </button>
-                <p className="text-[10px] text-gray-400 text-center mt-1 truncate">Existing</p>
+                <p className="text-[10px] text-gray-400 text-center mt-1 truncate">
+                  Existing
+                </p>
               </div>
             ))}
           </div>
@@ -398,7 +580,10 @@ export default function ProductEditPage({ product, onNavigate }) {
         {newImagePreviews.length > 0 && (
           <div className="flex flex-wrap gap-3 mt-3">
             {newImagePreviews.map((url, i) => (
-              <div key={i} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+              <div
+                key={i}
+                className="relative group w-20 h-20 rounded-lg overflow-hidden border border-gray-200"
+              >
                 <img src={url} alt="" className="w-full h-full object-cover" />
                 <button
                   type="button"
@@ -420,25 +605,93 @@ export default function ProductEditPage({ product, onNavigate }) {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Purchase Price</th>
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Old Price</th>
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Discount %</th>
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">New Price</th>
-                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">Stock</th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    Purchase Price
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    Old Price
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    Discount %
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    New Price
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-gray-600 font-semibold">
+                    Stock
+                  </th>
                   <th className="px-4 py-2.5 text-center w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {variations.map((v, i) => (
-                  <tr key={i} className="border-b border-gray-100 last:border-0">
-                    <td className="px-3 py-2"><input type="number" value={v.purchasePrice} onChange={e => updateVariation(i, 'purchasePrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
-                    <td className="px-3 py-2"><input type="number" value={v.oldPrice} onChange={e => updateVariation(i, 'oldPrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
-                    <td className="px-3 py-2"><input type="number" min="0" max="100" step="0.01" value={v.discountPercent} onChange={e => updateVariation(i, 'discountPercent', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" placeholder="%" /></td>
-                    <td className="px-3 py-2"><input type="number" value={v.newPrice} onChange={e => updateVariation(i, 'newPrice', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
-                    <td className="px-3 py-2"><input type="number" value={v.stock} onChange={e => updateVariation(i, 'stock', e.target.value)} className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700" /></td>
+                  <tr
+                    key={i}
+                    className="border-b border-gray-100 last:border-0"
+                  >
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={v.purchasePrice}
+                        onChange={(e) =>
+                          updateVariation(i, "purchasePrice", e.target.value)
+                        }
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={v.oldPrice}
+                        onChange={(e) =>
+                          updateVariation(i, "oldPrice", e.target.value)
+                        }
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={v.discountPercent}
+                        onChange={(e) =>
+                          updateVariation(i, "discountPercent", e.target.value)
+                        }
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                        placeholder="%"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={v.newPrice}
+                        onChange={(e) =>
+                          updateVariation(i, "newPrice", e.target.value)
+                        }
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        value={v.stock}
+                        onChange={(e) =>
+                          updateVariation(i, "stock", e.target.value)
+                        }
+                        className="w-full border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                      />
+                    </td>
                     <td className="px-3 py-2 text-center">
                       {variations.length > 1 && (
-                        <button type="button" onClick={() => removeVariation(i)} className="text-red-400 hover:text-red-600 transition"><Trash2 size={13} /></button>
+                        <button
+                          type="button"
+                          onClick={() => removeVariation(i)}
+                          className="text-red-400 hover:text-red-600 transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -446,7 +699,11 @@ export default function ProductEditPage({ product, onNavigate }) {
               </tbody>
             </table>
           </div>
-          <button type="button" onClick={addVariation} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium transition">
+          <button
+            type="button"
+            onClick={addVariation}
+            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium transition"
+          >
             <Plus size={13} /> Add Variation
           </button>
         </div>
@@ -456,16 +713,29 @@ export default function ProductEditPage({ product, onNavigate }) {
       <SectionCard title="Purchase">
         <div className="grid grid-cols-4 gap-4 items-end">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">Purchase</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2">
+              Purchase
+            </label>
             <Toggle checked={purchaseEnabled} onChange={setPurchaseEnabled} />
           </div>
           <FormField label="Suppliers">
             <div className="relative">
-              <select className={selectCls} value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
+              <select
+                className={selectCls}
+                value={selectedSupplier}
+                onChange={(e) => setSelectedSupplier(e.target.value)}
+              >
                 <option value="">Select...</option>
-                {suppliers.map(s => <option key={s.Id} value={s.Id}>{s.name}</option>)}
+                {suppliers.map((s) => (
+                  <option key={s.Id} value={s.Id}>
+                    {s.name}
+                  </option>
+                ))}
               </select>
-              <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={13}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
             </div>
           </FormField>
           <FormField label="Pay Amount">
@@ -479,12 +749,23 @@ export default function ProductEditPage({ product, onNavigate }) {
 
       {/* Description */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <RichEditor label="Description" required value={description} onChange={setDescription} placeholder="Enter product description" />
+        <RichEditor
+          label="Description"
+          required
+          value={description}
+          onChange={setDescription}
+          placeholder="Enter product description"
+        />
       </div>
 
       {/* Short Description */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <RichEditor label="Short Description" value={shortDescription} onChange={setShortDescription} placeholder="Enter short description" />
+        <RichEditor
+          label="Short Description"
+          value={shortDescription}
+          onChange={setShortDescription}
+          placeholder="Enter short description"
+        />
       </div>
 
       {/* SEO */}
@@ -492,14 +773,29 @@ export default function ProductEditPage({ product, onNavigate }) {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Meta Title">
-              <input type="text" value={metaTitle} onChange={e => setMetaTitle(e.target.value)} className={inputCls} />
+              <input
+                type="text"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
             <FormField label="Meta Keyword">
-              <input type="text" value={metaKeyword} onChange={e => setMetaKeyword(e.target.value)} className={inputCls} />
+              <input
+                type="text"
+                value={metaKeyword}
+                onChange={(e) => setMetaKeyword(e.target.value)}
+                className={inputCls}
+              />
             </FormField>
           </div>
           <FormField label="Meta Description">
-            <textarea rows={4} value={metaDescription} onChange={e => setMetaDescription(e.target.value)} className={`${inputCls} resize-none`} />
+            <textarea
+              rows={4}
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              className={`${inputCls} resize-none`}
+            />
           </FormField>
         </div>
       </SectionCard>
@@ -508,10 +804,20 @@ export default function ProductEditPage({ product, onNavigate }) {
       <SectionCard title="For Gift Wrapping">
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Title">
-            <input type="text" value={giftTitle} onChange={e => setGiftTitle(e.target.value)} className={inputCls} />
+            <input
+              type="text"
+              value={giftTitle}
+              onChange={(e) => setGiftTitle(e.target.value)}
+              className={inputCls}
+            />
           </FormField>
           <FormField label="Price">
-            <input type="number" value={giftPrice} onChange={e => setGiftPrice(e.target.value)} className={inputCls} />
+            <input
+              type="number"
+              value={giftPrice}
+              onChange={(e) => setGiftPrice(e.target.value)}
+              className={inputCls}
+            />
           </FormField>
         </div>
       </SectionCard>
@@ -524,11 +830,15 @@ export default function ProductEditPage({ product, onNavigate }) {
             <Toggle checked={status} onChange={setStatus} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="text-xs font-semibold text-gray-600">Best Deals</span>
+            <span className="text-xs font-semibold text-gray-600">
+              Best Deals
+            </span>
             <Toggle checked={bestDeals} onChange={setBestDeals} />
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="text-xs font-semibold text-gray-600">Free Shipping</span>
+            <span className="text-xs font-semibold text-gray-600">
+              Free Shipping
+            </span>
             <Toggle checked={freeShipping} onChange={setFreeShipping} />
           </div>
         </div>
@@ -538,7 +848,7 @@ export default function ProductEditPage({ product, onNavigate }) {
           disabled={submitting}
           className="bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white text-sm font-semibold px-8 py-2 rounded-lg transition"
         >
-          {submitting ? 'Updating...' : 'Update'}
+          {submitting ? "Updating..." : "Update"}
         </button>
       </div>
     </div>
