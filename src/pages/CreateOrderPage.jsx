@@ -19,10 +19,7 @@ import {
   useSubcategories,
 } from "../hooks/useProducts";
 import { orderService } from "../services/orderService";
-
-const ASSET_BASE_URL =
-  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ||
-  "http://localhost:5000";
+import { imageUrl } from "../utils/assetUrl";
 
 // ── Delivery areas ─────────────────────────────────────────
 const deliveryAreas = [
@@ -67,10 +64,7 @@ function imageValue(image) {
 
 function productImageSrc(image) {
   const src = imageValue(image).trim();
-  if (!src) return "";
-  if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
-  if (src.startsWith("/")) return `${ASSET_BASE_URL}${src}`;
-  return `${ASSET_BASE_URL}/images/${src}`;
+  return imageUrl(src);
 }
 
 function toId(value) {
@@ -618,8 +612,7 @@ export default function CreateOrderPage({ onNavigate }) {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 py-1.5 border-t border-gray-100 bg-white flex-shrink-0">
-        © Wazih Commerce{" "}
-        <span className="text-blue-500 cursor-pointer">DigitalEver</span>
+        © Wazih <span className="text-blue-500 cursor-pointer">DeenSoft</span>
       </div>
     </div>
   );

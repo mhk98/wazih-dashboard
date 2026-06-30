@@ -8,6 +8,7 @@ import { useProducts } from '../../hooks/useProducts';
 import { landingPageService } from '../../services/landingPageService';
 
 const TEMPLATES = [
+  'Giveaway Campaign',
   'Template Design 1',
   'Template Design 2',
   'Template Design 3',
@@ -669,7 +670,7 @@ function TemplatePicker({ selected, content, onSelect, onPreview }) {
         <label className="block text-xs font-semibold text-gray-700">Template Preview</label>
         <span className="text-[11px] font-semibold text-gray-400">Select before submit</span>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         {TEMPLATES.map((template) => {
           const active = selected === template;
           return (
@@ -758,6 +759,34 @@ function TemplatePreviewModal({ template, selected, content, onClose, onUse }) {
 }
 
 function TemplateThumbnail({ template, content }) {
+  if (template === 'Giveaway Campaign') {
+    return (
+      <div className="h-36 bg-[#fffdf8] p-3">
+        <div className="mx-auto h-4 w-4 rounded-full bg-amber-500" />
+        <div className="mt-2 space-y-1">
+          <div className="rounded bg-yellow-100 px-2 py-1 text-center text-[9px] font-black text-red-600">
+            আজই কিনুন, অফার নিন
+          </div>
+          <div className="rounded bg-indigo-100 px-2 py-1 text-center text-[9px] font-black text-emerald-700">
+            পুরস্কার ক্যাম্পেইন
+          </div>
+        </div>
+        <div className="relative mt-2 h-14 overflow-hidden rounded bg-[#1b130b]">
+          <PreviewImage src={content.bannerImage} alt={content.productName} className="absolute inset-0 h-full w-full opacity-55" />
+          <div className="relative p-2">
+            <p className="line-clamp-1 text-[10px] font-black text-yellow-200">{content.productName}</p>
+            <p className="mt-1 text-[15px] font-black text-yellow-300">{formatPreviewMoney(content.price)}</p>
+          </div>
+        </div>
+        <div className="mt-2 grid grid-cols-4 gap-1">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="h-3 rounded bg-orange-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (template === 'Template Design 2') {
     return (
       <div className="h-36 bg-emerald-50 p-3">
@@ -867,6 +896,7 @@ function LargeTemplatePreview({ template, content }) {
 }
 
 function getTemplateDescription(template) {
+  if (template === 'Giveaway Campaign') return 'Giveaway offer landing page like the reference';
   if (template === 'Template Design 2') return 'Product-focused light layout';
   if (template === 'Template Design 3') return 'Dark quick-order layout';
   return 'Classic campaign landing layout';

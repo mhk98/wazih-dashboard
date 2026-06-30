@@ -55,7 +55,7 @@ export default function InvoicePage({ order, onBack }) {
                   وجيه
                 </span>
                 <span className="text-yellow-300 text-xs font-semibold tracking-wider mt-0.5">
-                  Wazih Commerce
+                  Wazih
                 </span>
               </div>
             </div>
@@ -96,8 +96,8 @@ export default function InvoicePage({ order, onBack }) {
                 বিক্রেতা
               </div>
               <div className="text-sm text-gray-700 leading-relaxed space-y-0.5">
-                <div className="font-semibold">Wazih Commerce</div>
-                <div>homzify@gmail.com</div>
+                <div className="font-semibold">Wazih</div>
+                <div>Wazih@gmail.com</div>
                 <div>01518301098</div>
                 <div className="text-xs text-gray-500 leading-snug">
                   500/3 - C (খিলগাঁও মডেল কলেজের পিছনের রাস্তা), খিলগাঁও ঢাকা

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { brandService } from '../../services/productService';
+import { imageUrl } from '../../utils/assetUrl';
 
 function Toggle({ checked, onChange }) {
   return (
@@ -13,8 +15,6 @@ function Toggle({ checked, onChange }) {
 }
 
 const inputCls = 'w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:border-blue-400 bg-white';
-
-import { brandService } from '../../services/productService';
 
 function readImageFile(file) {
   return new Promise((resolve, reject) => {
@@ -92,7 +92,7 @@ export default function BrandEditPage({ brand, onNavigate }) {
             />
           </label>
           {logo && (
-            <img src={logo} alt={name || brand?.name} className="w-16 h-16 rounded-lg object-contain mt-2 border border-gray-200 bg-white p-2" />
+            <img src={imageUrl(logo)} alt={name || brand?.name} className="w-16 h-16 rounded-lg object-contain mt-2 border border-gray-200 bg-white p-2" />
           )}
         </div>
 

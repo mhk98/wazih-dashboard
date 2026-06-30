@@ -292,6 +292,14 @@ export default function LandingPageViewPage({ campaign }) {
     );
   }
 
+  if (template === "Giveaway Campaign") {
+    return (
+      <PreviewShell tone="light">
+        <GiveawayCampaignTemplate data={viewData} />
+      </PreviewShell>
+    );
+  }
+
   if (template === "Template Design 2") {
     return (
       <PreviewShell tone="light">
@@ -980,6 +988,163 @@ function TrackOrderPage({ phoneNumber, onBack, footerSettings, footerPages }) {
   );
 }
 
+function GiveawayCampaignTemplate({ data }) {
+  const {
+    productName,
+    title,
+    subTitle,
+    price,
+    originalPrice,
+    phone,
+    shortDescription,
+    descriptionTitle,
+    bannerImage,
+    prizeImageSource,
+    reviewImages,
+    relatedProducts,
+    onTrackOrder,
+    footerSettings,
+    footerPages,
+  } = data;
+
+  return (
+    <div className="min-h-screen bg-[#fffdf8] text-slate-900">
+      <div
+        className="min-h-screen"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.94), rgba(255,255,255,.97)), radial-gradient(circle at 8% 14%, rgba(234,179,8,.10) 0 70px, transparent 72px), radial-gradient(circle at 92% 32%, rgba(234,179,8,.08) 0 90px, transparent 92px)",
+        }}
+      >
+        <TopStrip phone={phone} onTrack={onTrackOrder} settings={footerSettings?.header} />
+
+        <main className="mx-auto max-w-[1340px] px-4 pb-12">
+          {footerSettings?.header?.status !== false && (
+            <header className="py-4 text-center">
+              {footerSettings?.header?.logoUrl ? (
+                <img
+                  src={footerSettings.header.logoUrl}
+                  alt={footerSettings.header.logoAlt || "Website logo"}
+                  className="mx-auto h-10 max-w-40 object-contain"
+                />
+              ) : (
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-white shadow-sm">
+                  {String(productName || "K").slice(0, 1)}
+                </div>
+              )}
+            </header>
+          )}
+
+          <Notice tone="yellow">
+            আজই কিনুন ৫ পিস আতর পারফিউম কম্বো প্যাকের সাথে নিশ্চিত ২ টি পুরস্কার
+            <br />
+            <span className="text-emerald-700">ক্যাম্পেইন অফার চলে যাওয়ার আগেই অর্ডার করুন</span>
+          </Notice>
+          <Notice tone="purple">
+            শতাধিকের মধ্যে অনেকেই পুরস্কার পেয়েছেন, আপনিও পাবেন
+            <br />
+            <span className="text-emerald-700">প্রতিটি অর্ডারের সাথে থাকছে আকর্ষণীয় অফার</span>
+          </Notice>
+
+          <div className="mt-3 text-center">
+            <JumpButton targetId="order-now">অর্ডার করুন</JumpButton>
+          </div>
+
+          <section className="mt-5 overflow-hidden rounded-md border border-amber-100 bg-[#21150c] shadow-sm">
+            <img
+              src={bannerImage}
+              alt={productName}
+              className="h-[clamp(240px,42vw,560px)] w-full object-cover"
+            />
+          </section>
+
+          <SectionBadge>এই ক্যাম্পেইনের পুরস্কার</SectionBadge>
+
+          <section className="overflow-hidden rounded-md border border-slate-200 bg-sky-50 shadow-sm">
+            {prizeImageSource ? (
+              <img
+                src={prizeImageSource}
+                alt="Campaign prize"
+                className="h-[clamp(240px,42vw,560px)] w-full object-cover"
+              />
+            ) : (
+              <div className="grid min-h-[280px] items-center gap-4 bg-gradient-to-br from-sky-300 via-white to-slate-200 p-6 md:grid-cols-[0.85fr_1fr]">
+                <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-red-700 p-5 text-center text-white shadow-xl">
+                  <p className="text-sm font-bold">SCRATCH CARD</p>
+                  <p className="mt-1 text-4xl font-black">R15</p>
+                  <p className="rounded-full bg-white px-4 py-2 text-sm font-black text-red-600">
+                    স্বপ্নপূরণ ক্যাম্পেইন
+                  </p>
+                </div>
+                <div className="text-center text-3xl font-black text-sky-800">
+                  বাইক বিজয়ী হওয়ার সুযোগ
+                </div>
+              </div>
+            )}
+          </section>
+
+          <SectionBadge>আগের ক্যাম্পেইনের বাইক বিজয়ী</SectionBadge>
+
+          <section className="mt-4 rounded-md border border-orange-100 bg-white/95 p-5 shadow-sm">
+            <h2 className="text-center text-2xl font-black text-slate-800">
+              আগের ক্যাম্পেইনের <span className="text-red-600">১১ জন বাইক বিজয়ী</span>
+            </h2>
+            <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+              {WINNERS.map((winner, index) => (
+                <WinnerCard
+                  key={winner}
+                  name={winner}
+                  index={index}
+                  image={reviewImages.length ? reviewImages[index % reviewImages.length] : ""}
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="mx-auto mt-5 max-w-xs rounded border border-emerald-200 bg-gradient-to-r from-rose-50 to-emerald-50 p-4 text-center shadow-sm">
+            <p className="text-xs text-slate-600">
+              পূর্বের মূল্য <span className="line-through">{formatMoney(originalPrice)} টাকা</span>
+            </p>
+            <p className="mt-1 text-lg font-black text-emerald-700">
+              অফার মূল্য - {formatMoney(price)} টাকা
+            </p>
+          </div>
+
+          <OrderFormBlock data={data} />
+
+          {relatedProducts.length ? (
+            <section className="mt-10 text-center">
+              <h2 className="text-lg font-black text-slate-900">You Might Also Like</h2>
+              <p className="mt-1 text-xs text-slate-500">More great products from the same category</p>
+              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                {relatedProducts.slice(0, 3).map((item) => (
+                  <ProductCard key={item.id} item={item} image={item.image} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {shortDescription ? (
+            <section className="mt-8 rounded border border-slate-200 bg-white/85 p-5 text-sm leading-7 text-slate-600">
+              <h2 className="mb-2 text-lg font-black text-slate-900">{descriptionTitle}</h2>
+              {shortDescription}
+            </section>
+          ) : null}
+
+          {title || subTitle ? (
+            <section className="mt-8 text-center">
+              <h2 className="text-xl font-black text-slate-900">{title}</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">{subTitle}</p>
+            </section>
+          ) : null}
+        </main>
+
+        <Footer phone={phone} settings={footerSettings} pages={footerPages} />
+      </div>
+    </div>
+  );
+}
+
 function TrackedOrderCard({ order }) {
   const status = String(order.status || "pending").replace(/_/g, " ");
   return (
@@ -1042,7 +1207,7 @@ function TemplateDesign2({ data }) {
         onTrack={onTrackOrder}
         settings={data.footerSettings?.header}
       />
-      <main className="mx-auto max-w-6xl px-4 pb-14">
+      <main className="mx-auto max-w-[1340px] px-4 pb-14">
         <section className="grid min-h-[520px] items-center gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="overflow-hidden rounded border border-emerald-100 bg-white shadow-sm">
             <img
@@ -1128,7 +1293,7 @@ function TemplateDesign3({ data }) {
         settings={data.footerSettings?.header}
       />
 
-      <main className="mx-auto max-w-6xl px-4 pb-14">
+      <main className="mx-auto max-w-[1340px] px-4 pb-14">
         <section className="grid gap-6 py-8 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded border border-white/10 bg-white text-slate-950">
             <div className="relative min-h-[430px]">
@@ -1288,7 +1453,7 @@ function WinnerGrid({ reviewImages, title, dark }) {
         {title}
       </h2>
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {WINNERS.slice(0, 8).map((winner, index) => (
+        {WINNERS.map((winner, index) => (
           <WinnerCard
             key={winner}
             name={winner}
@@ -1686,7 +1851,7 @@ function WinnerCard({ name, index, image }) {
           <img
             src={image}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         ) : (
           <>
@@ -2075,7 +2240,11 @@ function getProductName(campaign) {
 
 function normalizeTemplate(value) {
   const template = String(value || "Template Design 1").trim();
-  if (template === "Template Design 2" || template === "Template Design 3")
+  if (
+    template === "Giveaway Campaign" ||
+    template === "Template Design 2" ||
+    template === "Template Design 3"
+  )
     return template;
   return "Template Design 1";
 }

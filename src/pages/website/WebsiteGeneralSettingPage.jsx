@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { siteSettingService } from '../../services/websiteService';
 import { applyDocumentFavicon, normalizeSettingData } from '../../utils/siteBranding';
+import { imageUrl } from '../../utils/assetUrl';
 
 const SETTING_TYPE = 'general';
 
@@ -73,7 +74,7 @@ function LogoField({ label, preview, onChange }) {
       <input type="file" accept="image/*" onChange={(e) => handleFile(e.target.files[0])}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-600 hover:file:bg-gray-200" />
       {preview
-        ? <img src={preview} alt="logo" className="mt-2 w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm" />
+        ? <img src={imageUrl(preview)} alt="logo" className="mt-2 w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm" />
         : <div className="mt-2 w-12 h-12 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center"><span className="text-gray-300 text-xs">Logo</span></div>
       }
     </div>

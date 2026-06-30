@@ -65,11 +65,11 @@ function installMetaPixel() {
     window.fbq = fbq;
     window._fbq = fbq;
   }
-  if (!document.querySelector("script[data-homzify-meta-pixel]")) {
+  if (!document.querySelector("script[data-wazih-meta-pixel]")) {
     const script = document.createElement("script");
     script.async = true;
     script.src = "https://connect.facebook.net/en_US/fbevents.js";
-    script.dataset.homzifyMetaPixel = "true";
+    script.dataset.wazihMetaPixel = "true";
     document.head.appendChild(script);
   }
 }
@@ -115,7 +115,7 @@ function installTiktokPixel() {
     const script = document.createElement("script");
     script.async = true;
     script.src = `${ttq._i[pixelCode]._u}?sdkid=${encodeURIComponent(pixelCode)}&lib=ttq`;
-    script.dataset.homzifyTiktokPixel = pixelCode;
+    script.dataset.wazihTiktokPixel = pixelCode;
     document.head.appendChild(script);
   };
 }
@@ -128,11 +128,11 @@ function installGoogleTag(conversionId) {
     function gtag() {
       window.dataLayer.push(arguments);
     };
-  if (!document.querySelector("script[data-homzify-google-tag]")) {
+  if (!document.querySelector("script[data-wazih-google-tag]")) {
     const script = document.createElement("script");
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(conversionId)}`;
-    script.dataset.homzifyGoogleTag = "true";
+    script.dataset.wazihGoogleTag = "true";
     document.head.appendChild(script);
     window.gtag("js", new Date());
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { categoryService } from '../../services/productService';
+import { imageUrl } from '../../utils/assetUrl';
 
 function Toggle({ checked, onChange }) {
   return (
@@ -109,7 +110,7 @@ export default function CategoryEditPage({ category, onNavigate }) {
             <input type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files[0], setImageFile, setImageName)} />
           </label>
           {imageFile && (
-            <img src={imageFile} alt={category.name} className="w-16 h-16 rounded-lg object-cover mt-2 border border-gray-200" />
+            <img src={imageUrl(imageFile)} alt={category.name} className="w-16 h-16 rounded-lg object-cover mt-2 border border-gray-200" />
           )}
         </div>
 
@@ -127,7 +128,7 @@ export default function CategoryEditPage({ category, onNavigate }) {
               onChange={(e) => readFile(e.target.files[0], setBannerFile, setBannerName)}
             />
           </label>
-          {bannerFile && <img src={bannerFile} alt="category banner" className="mt-2 h-20 w-40 rounded-lg border border-gray-200 object-cover" />}
+          {bannerFile && <img src={imageUrl(bannerFile)} alt="category banner" className="mt-2 h-20 w-40 rounded-lg border border-gray-200 object-cover" />}
         </div>
 
         <div>

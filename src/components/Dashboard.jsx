@@ -74,9 +74,9 @@ export default function Dashboard() {
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 py-2">
-        © Wazih Commerce{" "}
+        © Wazih{" "}
         <span className="text-blue-500 cursor-pointer hover:underline">
-          DigitalEver
+          DeenSoft
         </span>
       </div>
     </main>

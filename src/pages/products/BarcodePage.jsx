@@ -157,7 +157,7 @@ function BarcodeCard({ product }) {
       id="product-barcode-card"
       className="w-full max-w-[465px] bg-white px-3 py-3 text-center shadow-sm print:shadow-none"
     >
-      <h2 className="text-2xl font-bold text-gray-500">Wazih Commerce</h2>
+      <h2 className="text-2xl font-bold text-gray-500">Wazih</h2>
       <p className="mt-1 text-base font-extrabold leading-tight text-black">
         {product.name}
       </p>

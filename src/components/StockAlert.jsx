@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiRequest } from "../utils/apiClient";
 
-const BASE_URL =
-  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ||
-  "http://localhost:5000";
-
 export default function StockAlert({ onViewAll }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

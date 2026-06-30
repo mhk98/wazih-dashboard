@@ -57,6 +57,7 @@ import LandingPageHeaderPage from "./pages/landing/LandingPageHeaderPage";
 import LandingPageFooterPage from "./pages/landing/LandingPageFooterPage";
 import { landingPageService } from "./services/landingPageService";
 import WebsiteGeneralSettingPage from "./pages/website/WebsiteGeneralSettingPage";
+import WebsiteFooterPage from "./pages/website/WebsiteFooterPage";
 import WebsiteSocialMediaPage from "./pages/website/WebsiteSocialMediaPage";
 import WebsiteContactPage from "./pages/website/WebsiteContactPage";
 import WebsiteShippingChargePage from "./pages/website/WebsiteShippingChargePage";
@@ -102,11 +103,11 @@ import { siteSettingService } from "./services/websiteService";
 import {
   applyDocumentFavicon,
   applyDocumentTitle,
-  assetSrc,
   getFavicon,
   getSiteName,
   normalizeSettingData,
 } from "./utils/siteBranding";
+import { imageUrl } from "./utils/assetUrl";
 
 function getDirectLandingPageId() {
   if (typeof window === "undefined") return "";
@@ -117,7 +118,7 @@ function getDirectLandingPageId() {
   return match?.[1] || "";
 }
 
-const DASHBOARD_NAV_STORAGE_KEY = "homzify-dashboard:navigation";
+const DASHBOARD_NAV_STORAGE_KEY = "Wazih-dashboard:navigation";
 
 const DEFAULT_NAVIGATION = {
   activePage: "dashboard",
@@ -346,15 +347,23 @@ function normalizeBanner(item) {
     item.imageUrl ??
     item.bannerImageUrl ??
     "";
+  const rawImageSrc =
+    item.imageUrl ??
+    item.bannerImageUrl ??
+    item.image ??
+    item.file ??
+    item.imageName ??
+    "";
   const imageName = String(rawImageName || "");
+  const imageSrc = String(rawImageSrc || "");
   return {
     id: item.Id ?? item.id,
     link: item.linkUrl ?? item.link ?? "",
     categoryId: item.categoryId ?? item.category?.Id ?? "",
     category,
     imageName,
-    imageSrc: assetSrc(imageName),
-    isDynamic: Boolean(imageName),
+    imageSrc: imageUrl(imageSrc),
+    isDynamic: Boolean(imageSrc),
     imageText: item.alt ?? item.imageText ?? category,
     imageColor: item.imageColor ?? "linear-gradient(135deg, #94a3b8, #475569)",
     status: item.status === true || item.status === "Active",
@@ -507,7 +516,7 @@ function App() {
       id: 2,
       title: "এ আঘা খাবার ৪টি কারণ",
       imageName: "",
-      imageText: "Wazih Commerce",
+      imageText: "Wazih",
       imageColor: "linear-gradient(135deg, #0f172a, #4b6b8a)",
       description: "",
       status: false,
@@ -788,6 +797,11 @@ function App() {
   }
 
   function saveCouponCode(data) {
+    if (!data) {
+      setSelectedCouponCode(null);
+      return;
+    }
+
     if (data.id) {
       setCouponCodes((prev) =>
         prev.map((coupon) =>
@@ -1638,6 +1652,7 @@ function App() {
     if (activePage === "website") {
       if (activeWebsitePage === "general_setting")
         return <WebsiteGeneralSettingPage />;
+      if (activeWebsitePage === "website_footer") return <WebsiteFooterPage />;
       if (activeWebsitePage === "social_media")
         return <WebsiteSocialMediaPage />;
       if (activeWebsitePage === "contact") return <WebsiteContactPage />;

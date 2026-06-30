@@ -41,7 +41,7 @@ export default function LoginPage() {
             <ShoppingBag size={40} className="text-white" />
           </div>
           <h1 className="text-4xl font-bold text-white mb-3">
-            Wazih Commerce Dashboard
+            Wazih Dashboard
           </h1>
           <p className="text-slate-400 text-lg mb-10">
             Complete E-Commerce Management System
@@ -76,7 +76,7 @@ export default function LoginPage() {
               <ShoppingBag size={20} className="text-white" />
             </div>
             <span className="text-xl font-bold text-slate-800">
-              Wazih Commerce Dashboard
+              Wazih Dashboard
             </span>
           </div>
 

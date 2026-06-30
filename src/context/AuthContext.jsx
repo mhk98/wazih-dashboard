@@ -6,6 +6,7 @@ import {
   getAccessToken,
   getRefreshToken,
   isTokenExpired,
+  pingApi,
   setTokens,
   USER_STORAGE_KEYS,
 } from "../utils/apiClient";
@@ -32,6 +33,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadStoredUser);
   const [isLoading, setIsLoading] = useState(true);
   const refreshTimerRef = useRef(null);
+  const keepAliveTimerRef = useRef(null);
 
   const logout = useCallback(async () => {
     clearTimers();
@@ -43,6 +45,7 @@ export function AuthProvider({ children }) {
 
   function clearTimers() {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
   }
 
   // Schedule a token refresh ~60 seconds before expiry
@@ -118,6 +121,32 @@ export function AuthProvider({ children }) {
       window.removeEventListener("auth:logout", onForceLogout);
     };
   }, [scheduleRefresh, logout]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const keepAlive = () => {
+      if (!getAccessToken()) return;
+      pingApi().catch(() => {
+        // The next real request will surface the error; this only keeps warm.
+      });
+    };
+
+    keepAlive();
+    keepAliveTimerRef.current = setInterval(keepAlive, 240_000);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") keepAlive();
+    };
+    window.addEventListener("focus", keepAlive);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+      window.removeEventListener("focus", keepAlive);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user]);
 
   const login = useCallback(async (email, password) => {
     const res = await authService.login(email, password);

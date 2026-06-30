@@ -87,6 +87,7 @@ const customersSubMenuItems = [
 // ── Website Setting submenu ───────────────────────────────────
 const websiteSettingSubMenuItems = [
   { key: 'general_setting',  label: 'General Setting',  icon: SlidersHorizontal, color: 'text-blue-400'   },
+  { key: 'website_footer',   label: 'Footer',           icon: PanelBottom,       color: 'text-amber-400'  },
   { key: 'social_media',     label: 'Social Media',     icon: Share2,            color: 'text-pink-400'   },
   { key: 'contact',          label: 'Contact',          icon: Phone,             color: 'text-green-400'  },
   { key: 'shipping_charge',  label: 'Shipping Charge',  icon: TruckIcon,         color: 'text-amber-400'  },

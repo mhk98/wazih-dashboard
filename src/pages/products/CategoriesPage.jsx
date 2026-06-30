@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useCategories } from '../../hooks/useProducts';
 import { categoryService } from '../../services/productService';
+import { imageUrl } from '../../utils/assetUrl';
 
 export default function CategoriesPage({ onNavigate, onEditCategory }) {
   const [search, setSearch] = useState('');
@@ -62,7 +63,7 @@ export default function CategoriesPage({ onNavigate, onEditCategory }) {
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-4 py-3">
                     {cat.imageFile || cat.image ? (
-                      <img src={cat.imageFile || cat.image} alt={cat.name} className="h-10 w-14 rounded border border-gray-200 object-cover" />
+                      <img src={imageUrl(cat.imageFile || cat.image)} alt={cat.name} className="h-10 w-14 rounded border border-gray-200 object-cover" />
                     ) : (
                       <span className="text-[10px] font-semibold text-gray-300">No image</span>
                     )}

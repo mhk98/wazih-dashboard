@@ -1,6 +1,5 @@
-const BASE_URL =
-  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ||
-  "http://localhost:5000";
+import { imageUrl } from "../utils/assetUrl";
+
 const fmt = (n) => Number(n || 0).toLocaleString("en-BD");
 
 export default function TopProducts({ topProducts = [], loading, onViewAll }) {
@@ -73,7 +72,7 @@ export default function TopProducts({ topProducts = [], loading, onViewAll }) {
                 <td className="px-4 py-3">
                   {p.productImage ? (
                     <img
-                      src={`${BASE_URL}/${p.productImage}`}
+                      src={imageUrl(p.productImage)}
                       alt={p.productName}
                       className="w-10 h-10 object-cover rounded border border-gray-200"
                       onError={(e) => {

@@ -1,6 +1,6 @@
 import { apiRequest, clearTokens, getAccessToken } from "../utils/apiClient";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+const BASE = import.meta.env.VITE_API_URL || "/api/v1";
 
 async function rawPost(path, body) {
   const res = await fetch(`${BASE}${path}`, {
@@ -9,8 +9,25 @@ async function rawPost(path, body) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.message || "Request failed");
+  const text = await res.text();
+  let json = {};
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      const looksLikeHtml = /<!doctype html|<html[\s>]/i.test(text);
+      json = {
+        message: looksLikeHtml
+          ? "API endpoint returned an HTML page. Please check the production API URL."
+          : text,
+      };
+    }
+  }
+  if (!res.ok) {
+    throw new Error(
+      json.message || res.statusText || "Request failed. Please try again.",
+    );
+  }
   return json;
 }
 

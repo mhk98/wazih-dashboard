@@ -1,3 +1,5 @@
+import { imageUrl } from "./assetUrl";
+
 export function isNumericKeyMap(value) {
   if (!value || Array.isArray(value) || typeof value !== "object") return false;
   const keys = Object.keys(value);
@@ -31,13 +33,7 @@ export function normalizeSettingData(value, depth = 0) {
 
 export function assetSrc(value) {
   if (!value) return "";
-  if (
-    value.startsWith("http") ||
-    value.startsWith("data:") ||
-    value.startsWith("/")
-  )
-    return value;
-  return `http://localhost:5000/images/${value}`;
+  return imageUrl(value);
 }
 
 export function getLogo(settings) {

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getLogo, getSiteName } from "../utils/siteBranding";
+import { assetUrl } from "../utils/assetUrl";
 import {
   connectNotificationSocket,
   disconnectNotificationSocket,
@@ -439,7 +440,7 @@ export default function TopNav({
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shrink-0">
               {user?.image ? (
                 <img
-                  src={`http://localhost:5000/${user.image}`}
+                  src={assetUrl(user.image)}
                   alt=""
                   className="w-8 h-8 rounded-full object-cover"
                 />

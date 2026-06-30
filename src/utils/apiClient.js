@@ -1,12 +1,12 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+const BASE = import.meta.env.VITE_API_URL || "/api/v1";
 
 const STORAGE_KEYS = {
-  access: "homzify_access",
-  refresh: "homzify_refresh",
+  access: "wazih_access",
+  refresh: "wazih_refresh",
 };
 
 export const USER_STORAGE_KEYS = {
-  current: "homzify_user",
+  current: "wazih_user",
 };
 
 export function getAccessToken() {
@@ -50,12 +50,16 @@ async function doRefresh() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) throw new Error("No refresh token");
 
-  const res = await fetch(`${BASE}/user/refresh-token`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
+  const res = await fetchWithRetry(
+    `${BASE}/user/refresh-token`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    },
+    true,
+  );
 
   if (!res.ok) {
     clearTokens();
@@ -164,6 +168,19 @@ export async function apiRequest(path, options = {}) {
     .catch(() => ({ message: res.statusText || "Request failed" }));
   if (!res.ok) throw new Error(json.message || "Request failed");
   return json;
+}
+
+export async function pingApi() {
+  const res = await fetchWithRetry(
+    `${BASE}/health`,
+    {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    },
+    true,
+  );
+  return res.ok;
 }
 
 export function buildQuery(params = {}) {
